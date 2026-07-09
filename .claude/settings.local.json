@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//workspaces/**)",
+      "Read(//home/**)",
+      "Bash(git *)"
+    ]
+  }
+}
