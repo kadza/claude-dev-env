@@ -34,9 +34,10 @@ other machines pick it up on `git pull`. (Editing an existing skill is live; add
    The templates pass this into the container so `claude` starts authenticated with no login prompt.
    *(On Linux you can instead mount `~/.claude/.credentials.json` — see the commented mount in each
    template's `devcontainer.json`.)*
-5. **Put `seed` on PATH** (optional):
+5. **Put `seed`/`unseed` on PATH** (optional):
    ```sh
-   ln -s ~/claude-dev-env/seed.sh ~/.local/bin/seed
+   ln -s ~/claude-dev-env/seed.sh   ~/.local/bin/seed
+   ln -s ~/claude-dev-env/unseed.sh ~/.local/bin/unseed
    ```
 
 ## Usage
@@ -51,6 +52,21 @@ devcontainer up, and execs a shell inside. `claude` is ready with the general + 
 
 Re-running `seed <tech> <name>` on an **existing** project skips scaffolding and just rebuilds/reconnects
 its container. Use this instead of a bare `devcontainer up` so the config-repo path is re-exported.
+
+The seeded container is named after the project (via `${localWorkspaceFolderBasename}`), so it shows up
+as `<name>` in OrbStack / `docker ps`.
+
+### Teardown
+
+```sh
+unseed <name>                 # remove the container, ~/projects/<name>, and ~/claude-state/<name>
+unseed -y <name>              # skip the confirmation prompt
+unseed --keep-state <name>    # remove container + project, but keep Claude memory/history
+```
+
+Destructive (deletes the project git repo and, unless `--keep-state`, its Claude memory), so it confirms
+first. Containers are matched by devcontainer label and by name, so it also cleans up projects seeded
+before the naming change.
 
 ## How config reaches the container
 

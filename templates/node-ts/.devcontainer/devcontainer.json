@@ -1,6 +1,9 @@
 {
-  "name": "seed-node-ts",
+  "name": "${localWorkspaceFolderBasename}",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+
+  // Name the Docker container after the seed/project name so it's identifiable in OrbStack/docker ps.
+  "runArgs": ["--name", "${localWorkspaceFolderBasename}"],
 
   "mounts": [
     // The config repo — single host clone, live write-back (§7). Source path is configurable:
