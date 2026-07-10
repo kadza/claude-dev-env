@@ -34,11 +34,19 @@ other machines pick it up on `git pull`. (Editing an existing skill is live; add
    The templates pass this into the container so `claude` starts authenticated with no login prompt.
    *(On Linux you can instead mount `~/.claude/.credentials.json` — see the commented mount in each
    template's `devcontainer.json`.)*
-5. **Put `seed`/`unseed` on PATH** (optional):
+5. **Put the commands (`seed`, `unseed`, `cc`) on PATH** (optional):
+   ```sh
+   ~/claude-dev-env/install-commands.sh          # symlinks into ~/.local/bin (must already exist)
+   ~/claude-dev-env/install-commands.sh /usr/local/bin   # or pass another dir already on PATH
+   ```
+   Idempotent — re-run anytime. It fails if the target dir doesn't exist (create it or pass one that
+   does), and warns if the dir isn't on your `PATH`. Equivalent to symlinking each `*.sh` by hand:
    ```sh
    ln -s ~/claude-dev-env/seed.sh   ~/.local/bin/seed
    ln -s ~/claude-dev-env/unseed.sh ~/.local/bin/unseed
+   ln -s ~/claude-dev-env/cc.sh     ~/.local/bin/cc
    ```
+   (The scripts resolve their own symlink, so the config repo is found via the clone, not the bin dir.)
 
 ## Usage
 
@@ -67,6 +75,34 @@ unseed --keep-state <name>    # remove container + project, but keep Claude memo
 Destructive (deletes the project git repo and, unless `--keep-state`, its Claude memory), so it confirms
 first. Containers are matched by devcontainer label and by name, so it also cleans up projects seeded
 before the naming change.
+
+## `cc` — a single dedicated Claude Code container
+
+Where `seed` gives you **one container per project**, `cc` gives you **one shared, always-available**
+container for quick work — a personal Claude Code sandbox that isn't tied to any project.
+
+```sh
+cc                    # start (creating on first run) the 'cc' container and launch claude
+cc "fix this bug"     # any args are passed through to claude
+cc --rebuild          # tear down and recreate the container from scratch, then launch
+```
+
+First run creates a container named `cc` on `node:bookworm-slim` (~200MB — much smaller than the
+devcontainer node images `seed` uses), installs Claude Code, and wires `~/.claude` to this repo via
+`bootstrap.sh` with **no framework layer** (general rules + skills only). Every later run just
+reconnects and launches `claude` — no rebuild. It reuses the same auth (`CLAUDE_CODE_OAUTH_TOKEN` or a
+mounted credentials file), SSH-agent, and config-repo mounts as the templates, so config edits on the
+host are live inside `cc` too.
+
+Unlike seeded projects, `cc` is a general scratch box, so its files and Claude state live in fixed
+host dirs that survive restarts (and `--rebuild`):
+
+- `~/cc-workspace/` → `/workspace` (the working directory) — put files here to keep them.
+- `~/cc-state/` → Claude memory/history/onboarding (`projects/` and `claude.json`).
+
+Teardown is just Docker (no `unseed` needed): `docker rm -f cc` (state and workspace on the host are
+kept). Use `cc --rebuild` if you only want to refresh the container itself — e.g. after your auth token
+changes, since the token is captured at container-create time.
 
 ## How config reaches the container
 
