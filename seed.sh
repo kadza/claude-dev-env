@@ -16,7 +16,15 @@ if [[ -z "$TECH" || -z "$NAME" ]]; then
   exit 1
 fi
 
-SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve this script's real location through any symlink chain (seed is meant to be symlinked
+# onto PATH, e.g. ~/.local/bin/seed), so the config-repo path is the clone, not the bin dir.
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -h "$SOURCE" ]]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SELF="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 CLAUDE_DEV_ENV="${CLAUDE_DEV_ENV:-$SELF}"
 export CLAUDE_DEV_ENV
 

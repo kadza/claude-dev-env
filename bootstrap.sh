@@ -1,40 +1,44 @@
 #!/usr/bin/env bash
 # Runs INSIDE a devcontainer. Wires ~/.claude to the bind-mounted config repo.
-# Usage: bootstrap.sh <tech>   (<tech> names a dir under frameworks/)
+# Usage: bootstrap.sh [<tech>]   (<tech> names a dir under frameworks/; omit for general-only)
 # Idempotent — safe to re-run anytime (e.g. after adding a skill).
 set -euo pipefail
 
 TECH="${1:-}"
-if [[ -z "$TECH" ]]; then
-  echo "usage: bootstrap.sh <tech>" >&2
-  exit 1
-fi
 
 # REPO = the dir this script lives in = the bind-mounted config repo. Never hardcoded.
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-FW="$REPO/frameworks/$TECH"
-if [[ ! -d "$FW" ]]; then
-  echo "error: unknown tech '$TECH' — no such dir $FW" >&2
-  echo "available frameworks:" >&2
-  ls -1 "$REPO/frameworks" >&2 || true
-  exit 1
+# TECH is optional. With a tech we layer frameworks/<tech> on top of general; with none
+# (e.g. the general-purpose `cc` container) we wire only the general layer.
+FW=""
+if [[ -n "$TECH" ]]; then
+  FW="$REPO/frameworks/$TECH"
+  if [[ ! -d "$FW" ]]; then
+    echo "error: unknown tech '$TECH' — no such dir $FW" >&2
+    echo "available frameworks:" >&2
+    ls -1 "$REPO/frameworks" >&2 || true
+    exit 1
+  fi
 fi
 
 CLAUDE_HOME="$HOME/.claude"
 mkdir -p "$CLAUDE_HOME/skills"
 
-# 1. CLAUDE.md stub — two absolute @imports into the mounted repo (overwrite each run).
-cat > "$CLAUDE_HOME/CLAUDE.md" <<EOF
-@$REPO/general/CLAUDE.md
-@$FW/CLAUDE.md
-EOF
+# 1. CLAUDE.md stub — absolute @imports into the mounted repo (overwrite each run). The
+#    framework import is included only when a tech was given.
+{
+  echo "@$REPO/general/CLAUDE.md"
+  [[ -n "$FW" ]] && echo "@$FW/CLAUDE.md"
+} > "$CLAUDE_HOME/CLAUDE.md"
 
 # 2. General settings — symlink so in-session approvals write back to the repo.
 ln -sfn "$REPO/general/settings.json" "$CLAUDE_HOME/settings.json"
 
 # 3. Skills — symlink each general + framework skill dir into ~/.claude/skills/.
-for dir in "$REPO/general/skills/"*/ "$FW/skills/"*/; do
+skill_globs=("$REPO/general/skills/"*/)
+[[ -n "$FW" ]] && skill_globs+=("$FW/skills/"*/)
+for dir in "${skill_globs[@]}"; do
   [[ -d "$dir" ]] || continue          # skip when a skills/ dir is empty (glob doesn't expand)
   name="$(basename "$dir")"
   ln -sfn "${dir%/}" "$CLAUDE_HOME/skills/$name"
@@ -79,4 +83,4 @@ PY
   fi
 fi
 
-echo "bootstrap: wired $CLAUDE_HOME for tech '$TECH' from $REPO"
+echo "bootstrap: wired $CLAUDE_HOME${TECH:+ for tech '$TECH'} from $REPO"
