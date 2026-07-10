@@ -1,8 +1,9 @@
 # claude-dev-env
 
 A seed tool. `seed <tech> <name>` scaffolds a new project, starts its devcontainer, and drops you into a
-shell where Claude Code is fully configured from this repo. See [`decisions.md`](decisions.md) for the
-full design and rationale.
+shell where Claude Code is fully configured from this repo. `clone <tech> <url> [name]` does the same for
+a repo that already exists on GitHub — cloning it and injecting the env glue. See
+[`decisions.md`](decisions.md) for the full design and rationale.
 
 **Live write-back.** This repo is bind-mounted into every container and `~/.claude` is wired to it with
 symlinks, so config is shared, not copied. Editing a skill or rule (or approving a permission) inside a
@@ -34,7 +35,7 @@ other machines pick it up on `git pull`. (Editing an existing skill is live; add
    The templates pass this into the container so `claude` starts authenticated with no login prompt.
    *(On Linux you can instead mount `~/.claude/.credentials.json` — see the commented mount in each
    template's `devcontainer.json`.)*
-5. **Put the commands (`seed`, `unseed`, `cc`) on PATH** (optional):
+5. **Put the commands (`seed`, `clone`, `unseed`, `cc`) on PATH** (optional):
    ```sh
    ~/claude-dev-env/install-commands.sh          # symlinks into ~/.local/bin (must already exist)
    ~/claude-dev-env/install-commands.sh /usr/local/bin   # or pass another dir already on PATH
@@ -43,6 +44,7 @@ other machines pick it up on `git pull`. (Editing an existing skill is live; add
    does), and warns if the dir isn't on your `PATH`. Equivalent to symlinking each `*.sh` by hand:
    ```sh
    ln -s ~/claude-dev-env/seed.sh   ~/.local/bin/seed
+   ln -s ~/claude-dev-env/clone.sh  ~/.local/bin/clone
    ln -s ~/claude-dev-env/unseed.sh ~/.local/bin/unseed
    ln -s ~/claude-dev-env/cc.sh     ~/.local/bin/cc
    ```
@@ -63,6 +65,26 @@ its container. Use this instead of a bare `devcontainer up` so the config-repo p
 
 The seeded container is named after the project (via `${localWorkspaceFolderBasename}`), so it shows up
 as `<name>` in OrbStack / `docker ps`.
+
+### From an existing GitHub repo
+
+```sh
+clone node-ts git@github.com:owner/repo.git    # or an https:// URL
+clone python https://github.com/owner/repo my-name   # optional 3rd arg overrides the name
+```
+
+Where `seed` scaffolds a fresh project, `clone` takes a repo that already lives on GitHub. It derives the
+project name from the URL (`…/owner/repo.git` → `repo`; pass a 3rd arg to override), `git clone`s the repo
+into `~/projects/<name>` (keeping its own `.git`, history, and remote), then injects the tech template's
+`.devcontainer/` and `.claude/` so the container comes up wired to this config. From there it's identical
+to `seed` — state dir, `devcontainer up`, shell.
+
+The injected files are **left uncommitted** in the working tree (they show as untracked/modified in
+`git status`), so they never risk being pushed upstream — `clone` makes no commit. The `.devcontainer/`
+is replaced wholesale so our `devcontainer.json` (config-repo mount + `bootstrap.sh <tech>`) is the one
+used; a repo's own `.devcontainer/` is overwritten. Re-running `clone` on an existing project resumes
+(rebuild/reconnect) and skips the clone + inject, just like `seed`. Use `git pull` inside to update the
+code. Teardown is the same `unseed <name>`.
 
 ### Teardown
 
@@ -131,7 +153,9 @@ container — that's expected, not a failure.
 
 ## Existing projects
 
-Inside an existing project's devcontainer, bind-mount + clone this repo and run once:
+For a repo on GitHub, `clone <tech> <url>` (above) automates the whole path — clone, inject env glue,
+bring the container up. The manual equivalent, for a project you already have checked out: inside its
+devcontainer, bind-mount + clone this repo and run once:
 ```sh
 ~/claude-dev-env/bootstrap.sh <tech>
 ```

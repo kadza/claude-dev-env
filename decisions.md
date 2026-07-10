@@ -424,3 +424,97 @@ decision with its rationale. This document is valuable as an implementation refe
 for sharing context with the team. Structure each entry as: the question that needed answering, the
 decision made, and the reasoning behind it (including alternatives considered and why they were rejected).
 ```
+
+---
+
+## §12 — The `clone` command: seeding from an existing GitHub repo
+
+Outcome of a design grilling session (2026-07-10). Automates the manual "existing projects" path of §11
+for repos that live on GitHub. `clone <tech> <url> [name]` clones the repo into `~/projects/<name>`,
+injects the tech template's env glue, and then follows the exact same up/exec flow as `seed`. Implemented
+in `clone.sh`.
+
+### 12.1 How is clone-mode invoked?
+
+**Decision:** A **separate command** (`clone`), not an overload of `seed`'s second arg or a flag.
+
+**Why:** Clean separation — the two flows differ fundamentally (git clone of a real remote vs. `git init`
+scaffold), so a distinct verb keeps each script simple and its behavior obvious. Rejected: overloading
+`seed <tech> <arg>` with URL-vs-name detection (a heuristic that can misfire, and mixes two behaviors in
+one script); an explicit `--clone` flag (more typing, still one overloaded command).
+
+### 12.2 How is the project name derived?
+
+**Decision:** Default to the **repo basename** (strip trailing `/` then `.git`:
+`git@github.com:owner/repo.git` → `repo`), with an **optional 3rd arg** to override
+(`clone <tech> <url> [name]`).
+
+**Why:** Matches "take the name from GitHub" for the common case, while the override escapes the two
+collision cases (two owners with the same repo name; a clash with an existing scaffold under
+`~/projects/`). Rejected: `owner-repo` always (longer dir/container names, not how you'd refer to the
+project); basename with a hard error on collision (the override arg is a lighter escape hatch).
+
+### 12.3 How are injected env files kept out of the upstream repo?
+
+**Decision:** Copy them into the working tree and **leave them untracked** — `clone` makes no commit.
+
+**Why:** The clone carries a live upstream remote; making no commit is the simplest guarantee that env
+files never get pushed. The cost is a dirty `git status` (untracked/modified paths), which is acceptable
+and documented. Rejected: registering them in `.git/info/exclude` (cleaner `git status`, but more
+machinery than the user wanted); a local-only branch (heavier, still pushable by mistake).
+
+### 12.4 What if the cloned repo already ships its own `.devcontainer/`?
+
+**Decision:** **Always overwrite**, no backup, no conflict check — replace `.devcontainer/` wholesale.
+
+**Why:** Our mechanism depends on *our* `devcontainer.json` (the config-repo bind mount + the
+`bootstrap.sh <tech>` call); a repo's own devcontainer lacks these, so the Claude env wouldn't come up.
+Since nothing is committed (§12.3), overwriting is non-destructive to the repo's history — the original is
+recoverable via git. Rejected: abort-with-message (safe but obstructs the common goal); overwrite with a
+timestamped backup (needless once we're not committing); a side path + `devcontainer up --config` (more
+moving parts).
+
+### 12.5 What gets injected from the template?
+
+**Decision:** Inject **`.devcontainer/` + `.claude/`** only. `.devcontainer/` is replaced wholesale;
+`.claude/` contents are merged in (so a repo's other `.claude/` files survive, only
+`settings.local.json` is written). No scaffold source, no template `.gitignore`.
+
+**Why:** `.devcontainer/` is the env glue; `.claude/settings.local.json` is the per-tech permission
+allowlist worth carrying over. The repo already has its own source and `.gitignore`. Rejected:
+`.devcontainer/` only (loses the pre-approved permission allowlist); everything-except-source (the
+template `.gitignore` would shadow the repo's own rules).
+
+### 12.6 When `~/projects/<name>` already exists?
+
+**Decision:** **Resume**, exactly like `seed` — skip clone + inject, go straight to `devcontainer up` +
+exec.
+
+**Why:** Consistent mental model with `seed`; re-running is how you reconnect after closing the shell. It
+deliberately does not re-pull — updating the code is the user's `git pull` inside. Rejected: erroring out
+(less convenient for the common reconnect case).
+
+### 12.7 Command name and installation
+
+**Decision:** Name it **`clone`** (`clone.sh` in the repo root), added to `install-commands.sh`'s explicit
+symlink list and documented in the README alongside `seed`.
+
+**Why:** Matches the `seed`/`unseed`/`cc` verb style. Rejected: `seed-clone` (self-documenting but longer)
+and `graft` (distinctive but opaque); the mild collision with "git clone" is acceptable given the verb-style
+consistency.
+
+### 12.8 clone.sh spec
+
+Runs on the *host*. Usage: `clone.sh <tech> <url> [name]`.
+
+1. Resolve `CLAUDE_DEV_ENV` from the script's real location (same symlink-chain resolution as seed.sh) and
+   export it for the templates' `${localEnv:CLAUDE_DEV_ENV}` mount.
+2. Preconditions (same set as seed.sh): config repo present, `templates/<tech>` exists, `devcontainer` CLI
+   on PATH, warn if `SSH_AUTH_SOCK` unset (clone + push both need the agent).
+3. Name: 3rd arg if given, else `basename` of the URL with a trailing `/` and `.git` stripped; error if
+   empty.
+4. If `~/projects/<name>` exists → resume (skip clone + inject). Else: `git clone <url> ~/projects/<name>`,
+   then `rm -rf` the project's `.devcontainer/` and copy the template's in, and merge the template's
+   `.claude/` contents in. No commit.
+5. `mkdir -p ~/claude-state/<name>/projects` and ensure `claude.json` exists (same as seed.sh).
+6. `devcontainer up` + `exec … bash`.
