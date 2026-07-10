@@ -2,8 +2,12 @@
   "name": "${localWorkspaceFolderBasename}",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:24",
 
-  // Name the Docker container after the seed/project name so it's identifiable in OrbStack/docker ps.
-  "runArgs": ["--name", "${localWorkspaceFolderBasename}"],
+  // --name: name the Docker container after the seed/project name so it's identifiable in OrbStack/docker ps.
+  // --network=host: share the host's network namespace so any port a dev server opens (4321, 5173, 3000…)
+  //   is reachable directly at localhost:<port> on the host — no --host flag, no per-port publishing.
+  //   Works on OrbStack (not plain Docker Desktop for Mac). Trade-offs: less isolation, and a port already
+  //   in use on the host collides. Network mode is fixed at create time — recreate the container to apply.
+  "runArgs": ["--name", "${localWorkspaceFolderBasename}", "--network=host"],
 
   "mounts": [
     // The config repo — single host clone, live write-back (§7). Source path is configurable:
