@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # Runs INSIDE a devcontainer. Wires ~/.claude to the bind-mounted config repo.
-# Usage: bootstrap.sh [<tech>]   (<tech> names a dir under frameworks/; omit for general-only)
+# Usage: bootstrap.sh [<tech>] [<project>]
+#   <tech>    names a dir under frameworks/; omit for general-only (e.g. the `cc` container).
+#   <project> project name for the shell prompt; omit to leave the prompt untouched.
 # Idempotent — safe to re-run anytime (e.g. after adding a skill).
 set -euo pipefail
 
 TECH="${1:-}"
+PROJECT="${2:-}"
 
 # REPO = the dir this script lives in = the bind-mounted config repo. Never hardcoded.
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -83,4 +86,19 @@ PY
   fi
 fi
 
-echo "bootstrap: wired $CLAUDE_HOME${TECH:+ for tech '$TECH'} from $REPO"
+# 5. Shell prompt — surface the project name so open containers are easy to tell apart. The
+#    container user stays node/vscode (renaming it isn't cheap, and --network=host blocks setting
+#    the hostname), so we put the project name where the host normally goes: the prompt reads
+#    "node@<project>:~/…". The PS1 lives in its own file (overwritten each run → self-updating) and
+#    ~/.bashrc sources it once. No-op when no project name was passed (e.g. the `cc` container).
+if [[ -n "$PROJECT" ]]; then
+  PROMPT_FILE="$HOME/.claude-dev-env-prompt.sh"
+  # Single-quoted PS1 so \u \w \e \$ reach the file as literal escapes for bash to expand at prompt
+  # time; only $PROJECT is interpolated now. (\\\$ → literal \$, i.e. $ for users / # for root.)
+  printf '%s\n' "export PS1='\[\e[1;36m\]\u@$PROJECT\[\e[0m\]:\w\\\$ '" > "$PROMPT_FILE"
+  if ! grep -qF 'claude-dev-env-prompt.sh' "$HOME/.bashrc" 2>/dev/null; then
+    printf '%s\n' '[ -f "$HOME/.claude-dev-env-prompt.sh" ] && . "$HOME/.claude-dev-env-prompt.sh"' >> "$HOME/.bashrc"
+  fi
+fi
+
+echo "bootstrap: wired $CLAUDE_HOME${TECH:+ for tech '$TECH'}${PROJECT:+ (prompt '$PROJECT')} from $REPO"

@@ -42,5 +42,5 @@
 
   // The state mounts make Docker auto-create ~/.claude (and the ~/.claude.json target) as root;
   // reclaim them so bootstrap and Claude can write.
-  "postCreateCommand": "sudo chown $(id -un):$(id -gn) /home/node/.claude /home/node/.claude.json && curl -fsSL https://claude.ai/install.sh | bash && /home/node/claude-dev-env/bootstrap.sh node-ts"
+  "postCreateCommand": "sudo chown $(id -un):$(id -gn) /home/node/.claude /home/node/.claude.json && curl -fsSL https://claude.ai/install.sh | bash && /home/node/claude-dev-env/bootstrap.sh node-ts ${localWorkspaceFolderBasename}"
 }
