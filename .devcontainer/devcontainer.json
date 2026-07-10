@@ -1,9 +1,6 @@
 {
   "name": "claude-dev-env",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm",
-  "features": {
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
-  },
   "postCreateCommand": "bash .devcontainer/setup.sh",
   "runArgs": ["--name", "claude-dev-env", "--network=host"]
 }

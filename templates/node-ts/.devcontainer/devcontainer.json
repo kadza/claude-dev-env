@@ -1,6 +1,6 @@
 {
   "name": "${localWorkspaceFolderBasename}",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:24",
 
   // Name the Docker container after the seed/project name so it's identifiable in OrbStack/docker ps.
   "runArgs": ["--name", "${localWorkspaceFolderBasename}"],
