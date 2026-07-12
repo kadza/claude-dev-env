@@ -1,9 +1,24 @@
 # claude-dev-env
 
-A seed tool. `seed <tech> <name>` scaffolds a new project, starts its devcontainer, and drops you into a
-shell where Claude Code is fully configured from this repo. `clone <tech> <url> [name]` does the same for
-a repo that already exists on GitHub — cloning it and injecting the env glue. See
+A seed tool. `d seed <tech> <name>` scaffolds a new project, starts its devcontainer, and drops you into
+a shell where Claude Code is fully configured from this repo. `d clone <tech> <url> [name]` does the same
+for a repo that already exists on GitHub — cloning it and injecting the env glue. See
 [`decisions.md`](decisions.md) for the full design and rationale.
+
+**One command to rule them.** `d` is the umbrella that dispatches to everything below — it's the only
+project command you install (plus `cc`, the standalone scratch box):
+
+```sh
+d seed   node-ts my-experiment       # scaffold a new project + container
+d clone  node-ts git@github.com:owner/repo.git   # from an existing GitHub repo
+d up     kite-lodz                   # start an existing project's container + drop into it
+d unseed kite-lodz                   # tear a project down
+d cc     "fix this bug"              # = cc "fix this bug"
+d help                               # list commands
+```
+
+`d <cmd>` just runs `<cmd>.sh` from this repo, exporting `CLAUDE_DEV_ENV` first. Only `d` and `cc` are
+put on your PATH; `seed`/`clone`/`up`/`unseed` are reached through `d`.
 
 **Live write-back.** This repo is bind-mounted into every container and `~/.claude` is wired to it with
 symlinks, so config is shared, not copied. Editing a skill or rule (or approving a permission) inside a
@@ -18,9 +33,8 @@ other machines pick it up on `git pull`. (Editing an existing skill is live; add
    ```sh
    git clone <this-repo> ~/claude-dev-env
    ```
-   `seed` derives the repo path from its own location and exports it as `CLAUDE_DEV_ENV` for the
-   templates' bind mount — nothing to configure. (Always run rebuilds through `seed` too, so the
-   path is re-exported; you never need `CLAUDE_DEV_ENV` in your shell profile.)
+   Step 5's `setup.sh` links the commands and exports `CLAUDE_DEV_ENV` into your shell profile from
+   here — nothing else to configure by hand.
 2. **devcontainer CLI** on PATH:
    ```sh
    npm install -g @devcontainers/cli
@@ -35,42 +49,68 @@ other machines pick it up on `git pull`. (Editing an existing skill is live; add
    The templates pass this into the container so `claude` starts authenticated with no login prompt.
    *(On Linux you can instead mount `~/.claude/.credentials.json` — see the commented mount in each
    template's `devcontainer.json`.)*
-5. **Put the commands (`seed`, `clone`, `unseed`, `cc`) on PATH** (optional):
+5. **Run `setup.sh`** — links the commands and wires your shell profile in one shot:
    ```sh
-   ~/claude-dev-env/install-commands.sh          # symlinks into ~/.local/bin (must already exist)
-   ~/claude-dev-env/install-commands.sh /usr/local/bin   # or pass another dir already on PATH
+   ~/claude-dev-env/setup.sh                 # bin dir ~/.local/bin, profile ~/.zshrc
+   ~/claude-dev-env/setup.sh /usr/local/bin  # different bin dir (must already exist + be on PATH)
+   PROFILE=~/.bashrc ~/claude-dev-env/setup.sh   # different shell profile
    ```
-   Idempotent — re-run anytime. It fails if the target dir doesn't exist (create it or pass one that
-   does), and warns if the dir isn't on your `PATH`. Equivalent to symlinking each `*.sh` by hand:
+   It (a) symlinks the two standalone commands, `d` and `cc`, into the bin dir, and (b) writes a managed
+   block to your profile:
    ```sh
-   ln -s ~/claude-dev-env/seed.sh   ~/.local/bin/seed
-   ln -s ~/claude-dev-env/clone.sh  ~/.local/bin/clone
-   ln -s ~/claude-dev-env/unseed.sh ~/.local/bin/unseed
-   ln -s ~/claude-dev-env/cc.sh     ~/.local/bin/cc
+   # >>> claude-dev-env >>>
+   export CLAUDE_DEV_ENV="/Users/you/claude-dev-env"
+   export PATH="$HOME/.local/bin:$PATH"      # only if that dir isn't already on PATH
+   # <<< claude-dev-env <<<
    ```
-   (The scripts resolve their own symlink, so the config repo is found via the clone, not the bin dir.)
+   Idempotent — re-run anytime; the block is rewritten in place (never duplicated) and links refreshed.
+   Open a new shell (or `source` the profile) afterward.
+
+   **Why the `CLAUDE_DEV_ENV` export matters:** the commands set it themselves, but any container you
+   bring up *without* them — a bare `devcontainer up`, `devcontainer exec`, or `devpod ssh` from a fresh
+   terminal — reads `${localEnv:CLAUDE_DEV_ENV}` from that shell. If it's unset the config-repo mount
+   source is empty and Docker fails with `invalid mount config … field Source must not be empty`. Having
+   it in your profile makes every shell resolve the mount.
 
 ## Usage
 
 ```sh
-seed node-ts my-experiment    # or: seed python my-experiment
+d seed node-ts my-experiment    # or: d seed python my-experiment
 ```
 
 This creates `~/projects/my-experiment`, `~/claude-state/my-experiment`, does a first commit, brings the
 devcontainer up, and execs a shell inside. `claude` is ready with the general + framework rules and the
 `grill-me` skill.
 
-Re-running `seed <tech> <name>` on an **existing** project skips scaffolding and just rebuilds/reconnects
-its container. Use this instead of a bare `devcontainer up` so the config-repo path is re-exported.
+Re-running `d seed <tech> <name>` on an **existing** project skips scaffolding and rebuilds/reconnects its
+container. To just get back in without a rebuild, use `d up <name>` (below).
 
 The seeded container is named after the project (via `${localWorkspaceFolderBasename}`), so it shows up
 as `<name>` in OrbStack / `docker ps`.
 
+### Reconnecting to an existing project
+
+```sh
+d up <name>
+```
+
+Use this from any fresh terminal to get back into a project whose container is stopped (or was never
+started this session). It's a thin wrapper over `devcontainer up` + `devcontainer exec … bash` that
+first exports `CLAUDE_DEV_ENV`, so the config-repo mount resolves even from a bare shell — the exact
+failure you'd otherwise hit with a raw `devcontainer up` or `devpod ssh` when the variable isn't in your
+profile (`invalid mount config … field Source must not be empty`). `d up` never scaffolds or clones; it
+errors if `~/projects/<name>` doesn't exist. `devcontainer up` is idempotent, so it's safe whether the
+container is stopped, missing, or already running.
+
+> Reconnect with the **same** CLI you created the project with (`devcontainer`). `devcontainer` and
+> `devpod` each build their own container from the same `devcontainer.json`; mixing them makes one
+> rebuild from scratch instead of attaching.
+
 ### From an existing GitHub repo
 
 ```sh
-clone node-ts git@github.com:owner/repo.git    # or an https:// URL
-clone python https://github.com/owner/repo my-name   # optional 3rd arg overrides the name
+d clone node-ts git@github.com:owner/repo.git    # or an https:// URL
+d clone python https://github.com/owner/repo my-name   # optional 3rd arg overrides the name
 ```
 
 Where `seed` scaffolds a fresh project, `clone` takes a repo that already lives on GitHub. It derives the
@@ -84,14 +124,14 @@ The injected files are **left uncommitted** in the working tree (they show as un
 is replaced wholesale so our `devcontainer.json` (config-repo mount + `bootstrap.sh <tech>`) is the one
 used; a repo's own `.devcontainer/` is overwritten. Re-running `clone` on an existing project resumes
 (rebuild/reconnect) and skips the clone + inject, just like `seed`. Use `git pull` inside to update the
-code. Teardown is the same `unseed <name>`.
+code. Teardown is the same `d unseed <name>`.
 
 ### Teardown
 
 ```sh
-unseed <name>                 # remove the container, ~/projects/<name>, and ~/claude-state/<name>
-unseed -y <name>              # skip the confirmation prompt
-unseed --keep-state <name>    # remove container + project, but keep Claude memory/history
+d unseed <name>                 # remove the container, ~/projects/<name>, and ~/claude-state/<name>
+d unseed -y <name>              # skip the confirmation prompt
+d unseed --keep-state <name>    # remove container + project, but keep Claude memory/history
 ```
 
 Destructive (deletes the project git repo and, unless `--keep-state`, its Claude memory), so it confirms
