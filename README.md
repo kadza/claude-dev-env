@@ -91,16 +91,21 @@ as `<name>` in OrbStack / `docker ps`.
 ### Reconnecting to an existing project
 
 ```sh
-d up <name>
+d up kite-lodz     # a bare name → ~/projects/kite-lodz
+d up .             # the current directory (cd into the project first); d up alone means the same
+d up ~/work/repo   # any path also works, even outside ~/projects
 ```
 
 Use this from any fresh terminal to get back into a project whose container is stopped (or was never
 started this session). It's a thin wrapper over `devcontainer up` + `devcontainer exec … bash` that
 first exports `CLAUDE_DEV_ENV`, so the config-repo mount resolves even from a bare shell — the exact
 failure you'd otherwise hit with a raw `devcontainer up` or `devpod ssh` when the variable isn't in your
-profile (`invalid mount config … field Source must not be empty`). `d up` never scaffolds or clones; it
-errors if `~/projects/<name>` doesn't exist. `devcontainer up` is idempotent, so it's safe whether the
-container is stopped, missing, or already running.
+profile (`invalid mount config … field Source must not be empty`). The argument is a project **name**
+(mapped to `~/projects/<name>`) or a **path** (`.`, `..`, or any dir with a slash) used as the workspace
+folder directly; omitting it means `.`. State is keyed off the folder basename, so `d up .` from
+`~/projects/kite-lodz` reuses the same Claude memory as `d up kite-lodz`. `d up` never scaffolds or
+clones; it errors if the folder (or its `.devcontainer/`) is missing. `devcontainer up` is idempotent,
+so it's safe whether the container is stopped, missing, or already running.
 
 > Reconnect with the **same** CLI you created the project with (`devcontainer`). `devcontainer` and
 > `devpod` each build their own container from the same `devcontainer.json`; mixing them makes one
