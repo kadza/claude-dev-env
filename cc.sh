@@ -85,6 +85,7 @@ if ! exists; then
   docker run -d --name "$NAME" \
     -e CLAUDE_CODE_OAUTH_TOKEN \
     -v "$CLAUDE_DEV_ENV":/home/node/claude-dev-env \
+    -v "$CLAUDE_DEV_ENV/general/skills":/home/node/.claude/skills \
     -v "$STATE/projects":/home/node/.claude/projects \
     -v "$STATE/claude.json":/home/node/.claude.json \
     -v "$WORKSPACE":/workspace \
@@ -102,7 +103,8 @@ if ! exists; then
     'apt-get update -qq && apt-get install -y -qq --no-install-recommends git curl ca-certificates >/dev/null && rm -rf /var/lib/apt/lists/*'
 
   # Install Claude Code, then wire ~/.claude to the mounted config repo (general layer only —
-  # no framework, this is a general-purpose container).
+  # no framework, this is a general-purpose container). Skills aren't wired here — general/skills
+  # is bind-mounted straight onto ~/.claude/skills above.
   docker exec -u node "$NAME" bash -c 'curl -fsSL https://claude.ai/install.sh | bash'
   docker exec -u node "$NAME" bash /home/node/claude-dev-env/bootstrap.sh
 elif ! running; then

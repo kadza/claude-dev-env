@@ -26,7 +26,7 @@ if [[ -n "$TECH" ]]; then
 fi
 
 CLAUDE_HOME="$HOME/.claude"
-mkdir -p "$CLAUDE_HOME/skills"
+mkdir -p "$CLAUDE_HOME"
 
 # 1. CLAUDE.md stub — absolute @imports into the mounted repo (overwrite each run). The
 #    framework import is included only when a tech was given.
@@ -38,16 +38,10 @@ mkdir -p "$CLAUDE_HOME/skills"
 # 2. General settings — symlink so in-session approvals write back to the repo.
 ln -sfn "$REPO/general/settings.json" "$CLAUDE_HOME/settings.json"
 
-# 3. Skills — symlink each general + framework skill dir into ~/.claude/skills/.
-skill_globs=("$REPO/general/skills/"*/)
-[[ -n "$FW" ]] && skill_globs+=("$FW/skills/"*/)
-for dir in "${skill_globs[@]}"; do
-  [[ -d "$dir" ]] || continue          # skip when a skills/ dir is empty (glob doesn't expand)
-  name="$(basename "$dir")"
-  ln -sfn "${dir%/}" "$CLAUDE_HOME/skills/$name"
-done
+# Skills are no longer wired here: general/skills is bind-mounted straight onto ~/.claude/skills
+# by the devcontainer (see the template devcontainer.json), so add/remove is live with no re-run.
 
-# 4. UI defaults — merge general/claude.json (theme, onboarding) into ~/.claude.json without
+# 3. UI defaults — merge general/claude.json (theme, onboarding) into ~/.claude.json without
 #    clobbering keys Claude manages (userID, machineID, history, per-project trust). Only fills
 #    MISSING keys, so a later manual theme change sticks. Runs every bootstrap → self-healing.
 DEFAULTS="$REPO/general/claude.json"
@@ -86,7 +80,7 @@ PY
   fi
 fi
 
-# 5. Shell prompt — surface the project name so open containers are easy to tell apart. The
+# 4. Shell prompt — surface the project name so open containers are easy to tell apart. The
 #    container user stays node/vscode (renaming it isn't cheap, and --network=host blocks setting
 #    the hostname), so we put the project name where the host normally goes: the prompt reads
 #    "node@<project>:~/…". The PS1 lives in its own file (overwritten each run → self-updating) and

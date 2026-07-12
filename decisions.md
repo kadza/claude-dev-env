@@ -63,10 +63,12 @@ bootstrap manually once.
   `general/CLAUDE.md` and `frameworks/<tech>/CLAUDE.md`. Content stays versioned; stub is regenerable.
   Rejected: symlink + relative `@import` (resolution through symlinks is fragile); concatenation (edits to
   the repo don't take effect live).
-- **Skills:** bootstrap symlinks each skill dir from `general/skills/*` and `frameworks/<tech>/skills/*`
-  into `~/.claude/skills/`. Edits are live; a *new* skill requires re-running bootstrap (idempotent,
-  cheap). Rejected: whole-dir symlinks relying on nested skill discovery (unverified); copying (loses
-  write-back).
+- **Skills:** `general/skills/` is bind-mounted straight onto `~/.claude/skills/` by the devcontainer,
+  so add/remove/edit are all live — no bootstrap involvement (a running `claude` just needs a restart to
+  rescan). Rejected: per-skill symlinks created by bootstrap (a *new* skill needed a bootstrap re-run and
+  *deletes* left dangling symlinks behind); copying (loses write-back). Framework-scoped skills were
+  dropped — general skills apply everywhere, and per-framework needs can live in a project's own
+  `.claude/skills/` if they ever arise.
 - **Framework selection:** no detection logic — each template's postCreate calls `bootstrap.sh <tech>`;
   the template knows its own tech.
 
@@ -134,13 +136,10 @@ claude-dev-env/
   frameworks/
     node-ts/
       CLAUDE.md          # start minimal; grows with use
-      skills/
     python/
       CLAUDE.md
-      skills/
     react/
       CLAUDE.md          # Appendix B
-      skills/
   templates/
     node-ts/
       .devcontainer/devcontainer.json
@@ -162,7 +161,6 @@ claude-dev-env/
 Runs *inside* the container. Usage: `bootstrap.sh <tech>` where `<tech>` names a dir under `frameworks/`.
 
 - Resolve `REPO` = directory the script lives in (the bind-mounted repo — do not hardcode the path).
-- `mkdir -p ~/.claude/skills`
 - Generate `~/.claude/CLAUDE.md` (plain file, overwrite):
   ```
   @$REPO/general/CLAUDE.md
@@ -170,9 +168,9 @@ Runs *inside* the container. Usage: `bootstrap.sh <tech>` where `<tech>` names a
   ```
   (absolute paths as resolved in the container)
 - `ln -sfn $REPO/general/settings.json ~/.claude/settings.json`
-- For each dir in `$REPO/general/skills/*` and `$REPO/frameworks/<tech>/skills/*`:
-  `ln -sfn <dir> ~/.claude/skills/<basename>`
-- Must be idempotent — safe to re-run anytime (e.g. after adding a skill).
+- Skills are *not* wired here — the devcontainer bind-mounts `general/skills/` straight onto
+  `~/.claude/skills/`, so add/remove is live with no re-run.
+- Must be idempotent — safe to re-run anytime.
 - Fail loudly if `<tech>` missing or the frameworks dir doesn't exist.
 
 ### seed.sh
