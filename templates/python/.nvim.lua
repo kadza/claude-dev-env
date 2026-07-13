@@ -1,24 +1,22 @@
--- Host-side Neovim config for driving the LSP/formatters that live *inside* this
--- project's devcontainer (via `docker exec`). Auto-sourced by Neovim when `exrc` is
--- enabled and this file is trusted. Requires nvim-lspconfig, cmp_nvim_lsp, and conform.nvim.
+-- Host-side Neovim config for driving the LSP/formatters that live *inside* this project's
+-- devcontainer (via `docker exec`). Auto-sourced by Neovim when `exrc` is enabled and this file is
+-- trusted. Requires nvim-lspconfig, cmp_nvim_lsp, and conform.nvim.
 --
--- The devcontainer is named after the project folder (see .devcontainer/devcontainer.json:
--- `--name ${localWorkspaceFolderBasename}`), so we derive the container name from the current
--- working directory's basename rather than hardcoding it — that keeps this template generic
--- across every seeded project. Override with CLAUDE_DEV_CONTAINER if the names ever diverge.
--- The LSP servers/formatters are installed into /home/vscode/.local/bin by the container's
--- postCreateCommand (`uv tool install ...`).
+-- The container is named after the project folder (devcontainer.json: `--name
+-- ${localWorkspaceFolderBasename}`), so we derive its name from the cwd basename rather than
+-- hardcoding it — keeps this template generic. Override with CLAUDE_DEV_CONTAINER if names diverge.
+-- The LSP servers/formatters land in /home/vscode/.local/bin via the container's postCreateCommand.
+
+local conform = require("conform")
+local lspconfig = require("lspconfig")
+local cmp_nvim_lsp = require("cmp_nvim_lsp")
+local capabilities = cmp_nvim_lsp.default_capabilities()
 
 local container = os.getenv("CLAUDE_DEV_CONTAINER") or vim.fn.fnamemodify(vim.fn.getcwd(), ":t")
 
 local function docker_exec(bin, ...)
 	return { "docker", "exec", "-i", "-u", "vscode", "-e", "HOME=/home/vscode", container, bin, ... }
 end
-
-local lspconfig = require("lspconfig")
-local cmp_nvim_lsp = require("cmp_nvim_lsp")
-local conform = require("conform")
-local capabilities = cmp_nvim_lsp.default_capabilities()
 
 lspconfig.pylsp.setup({
 	capabilities = capabilities,
