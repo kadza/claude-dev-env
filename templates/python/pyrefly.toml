@@ -1,0 +1,4 @@
+project-includes = [
+    "src",
+    "tests",
+]

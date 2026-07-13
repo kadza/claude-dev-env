@@ -47,5 +47,8 @@
 
   // The state mounts make Docker auto-create ~/.claude (and the ~/.claude.json target) as root;
   // reclaim them so bootstrap and Claude can write.
-  "postCreateCommand": "sudo chown $(id -un):$(id -gn) /home/vscode/.claude /home/vscode/.claude.json && curl -fsSL https://claude.ai/install.sh | bash && curl -LsSf https://astral.sh/uv/install.sh | sh && /home/vscode/claude-dev-env/bootstrap.sh python ${localWorkspaceFolderBasename}"
+  // The uv tool installs put pylsp/pyrefly/ruff on ~/.local/bin so the host-side Neovim config
+  // (.nvim.lua) can `docker exec` them for LSP + formatting. Project-scoped runs use the dev
+  // deps in pyproject.toml (`uv run pytest`, `uv run pyrefly check`, `uv run ruff check`).
+  "postCreateCommand": "sudo chown $(id -un):$(id -gn) /home/vscode/.claude /home/vscode/.claude.json && curl -fsSL https://claude.ai/install.sh | bash && curl -LsSf https://astral.sh/uv/install.sh | sh && $HOME/.local/bin/uv tool install python-lsp-server --with python-lsp-ruff && $HOME/.local/bin/uv tool install pyrefly && $HOME/.local/bin/uv tool install ruff && /home/vscode/claude-dev-env/bootstrap.sh python ${localWorkspaceFolderBasename}"
 }
