@@ -54,7 +54,9 @@ if [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" && ! -f "$HOME/.claude/.credentials.json
 fi
 
 # --- mount targets must pre-exist on the host (a file bind mount needs an existing source) ---
-mkdir -p "$WORKSPACE" "$STATE/projects"
+# ~/claude-shots is the shared, global screenshot inbox (macOS shots saved here → readable in every
+# container at ~/.claude-shots); create it defensively in case setup.sh hasn't been (re-)run.
+mkdir -p "$WORKSPACE" "$STATE/projects" "$HOME/claude-shots"
 [[ -f "$STATE/claude.json" ]] || printf '{}\n' > "$STATE/claude.json"
 
 exists()  { [[ -n "$(docker ps -aq --filter "name=^/${NAME}$")" ]]; }
@@ -89,6 +91,7 @@ if ! exists; then
     -v "$STATE/projects":/home/node/.claude/projects \
     -v "$STATE/claude.json":/home/node/.claude.json \
     -v "$WORKSPACE":/workspace \
+    -v "$HOME/claude-shots":/home/node/.claude-shots \
     ${ssh_mount[@]+"${ssh_mount[@]}"} ${creds_mount[@]+"${creds_mount[@]}"} \
     -w /workspace \
     "$IMAGE" sleep infinity >/dev/null

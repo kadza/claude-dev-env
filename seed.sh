@@ -61,6 +61,10 @@ fi
 mkdir -p "$STATE/projects"
 [[ -f "$STATE/claude.json" ]] || printf '{}\n' > "$STATE/claude.json"
 
+# Shared screenshot inbox (global, not per-project): macOS screenshots saved to ~/claude-shots on the
+# host appear in every container at ~/.claude-shots. Mount source must pre-exist; idempotent.
+mkdir -p "$HOME/claude-shots"
+
 # --- up + in ---
 devcontainer up --workspace-folder "$PROJECT"
 exec devcontainer exec --workspace-folder "$PROJECT" bash

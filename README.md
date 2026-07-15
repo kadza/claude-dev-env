@@ -199,6 +199,31 @@ Auth is separate and file-less: `claude` reads `CLAUDE_CODE_OAUTH_TOKEN` from th
 (see host setup step 4), so there is intentionally **no** `~/.claude/.credentials.json` inside the
 container — that's expected, not a failure.
 
+## Screenshots into the container
+
+Image paste (`Cmd+V`) doesn't work inside the containers — they're headless Linux with no clipboard or
+display server for the CLI to read. Instead, screenshots reach Claude as **files** through a shared
+folder that's bind-mounted into every container.
+
+**One-time host setup** (in addition to `setup.sh`, which creates `~/claude-shots` for you): add that
+folder as a screenshot destination so you can pick it per-shot.
+
+1. `Cmd+Shift+5` → **Options** → **Save to** → **Other Location…** → choose `~/claude-shots`.
+2. macOS remembers it in the "Save to" menu as a selectable entry. Your **default stays the Desktop** —
+   `claude-shots` is just an option you choose when you want Claude to see a shot.
+
+**Workflow.** Take a screenshot with `claude-shots` selected as the destination → it lands in
+`~/claude-shots` on the host and, live, at `~/.claude-shots` inside every running container → tell Claude
+"look at my last screenshot". Claude reads the newest file there and deletes it afterward (the folder is
+a transient inbox; the mount is read-write so this cleanup works).
+
+Notes:
+- The folder is **global** — one pick covers `cc` and every seeded/cloned project.
+- Mounts are fixed at container-create time, so an **existing** project/`cc` needs a rebuild
+  (`d seed …` / `cc --rebuild`) before the mount appears.
+- The host folder is visible (`~/claude-shots`) so it's selectable in the macOS folder picker; inside the
+  container it's the hidden `~/.claude-shots`.
+
 ## Existing projects
 
 For a repo on GitHub, `clone <tech> <url>` (above) automates the whole path — clone, inject env glue,

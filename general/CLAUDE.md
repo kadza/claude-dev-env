@@ -4,6 +4,14 @@ When the user provides file paths, component names, or context about the codebas
 Do not re-search the codebase for schemas, files, or structures the user has already described. If a file
 isn't found on the first attempt, ask the user for the correct path instead of repeated glob/grep attempts.
 
+## Screenshots
+
+When the user refers to a screenshot or image they took (e.g. "look at my screenshot", "my last
+screenshot", "the image I just grabbed"), read the **newest file by mtime** at the top level of
+`~/.claude-shots/`. After you've used it, `rm` that file — the folder is a transient inbox, so keep it
+clean. If the folder is empty, say so and ask them to save a screenshot there (on macOS: Cmd+Shift+5 →
+Save to → the `claude-shots` destination) rather than guessing.
+
 ## General Rules
 
 Stay within the requested scope. Do not make changes to files or functionality the user did not ask about.

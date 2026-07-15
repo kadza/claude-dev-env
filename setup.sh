@@ -65,9 +65,19 @@ mv "$tmp" "$PROFILE"
 printf '\n%s\n' "$block" >> "$PROFILE"
 echo "$verb claude-dev-env block in $PROFILE"
 
+# --- 3. screenshot inbox -------------------------------------------------------------------------
+# The shared, global folder macOS screenshots land in; every container mounts it at ~/.claude-shots.
+# Create it here so the bind mount resolves (bring-up scripts also create it defensively).
+mkdir -p "$HOME/claude-shots"
+echo "created $HOME/claude-shots (shared screenshot inbox)"
+
 # --- next steps ----------------------------------------------------------------------------------
 echo
 echo "done — open a new shell, or: source \"$PROFILE\""
+echo
+echo "screenshots: to show Claude a screenshot, save it into ~/claude-shots. Add that folder once as a"
+echo "  destination — Cmd+Shift+5 → Options → Save to → Other Location… → ~/claude-shots — then pick it"
+echo "  per shot. Claude reads the newest file (at ~/.claude-shots in the container) and deletes it after."
 [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]] || cat >&2 <<EOF
 note: CLAUDE_CODE_OAUTH_TOKEN is unset. Mint one once and add it to $PROFILE so containers start
       authenticated:  export CLAUDE_CODE_OAUTH_TOKEN="\$(claude setup-token)"
