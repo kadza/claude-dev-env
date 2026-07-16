@@ -5,7 +5,7 @@
 #
 #   d seed   <tech> <name>                 scaffold a new project + container, drop into it
 #   d clone  <tech> <url> [name]           clone a GitHub repo into a project + container, drop in
-#   d up     [<name>|.]                     start an existing project's container + drop in (. = cwd)
+#   d up     [--rebuild] [<name>|.]         start an existing project's container + drop in (. = cwd)
 #   d unseed [-y] [--keep-state] <name>    tear a project down (container + dirs)
 #   d cc     [claude args…]                open Claude in the shared scratch container
 #   d help                                 show this list

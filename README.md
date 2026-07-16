@@ -92,9 +92,10 @@ as `<name>` in OrbStack / `docker ps`.
 ### Reconnecting to an existing project
 
 ```sh
-d up kite-lodz     # a bare name → ~/projects/kite-lodz
-d up .             # the current directory (cd into the project first); d up alone means the same
-d up ~/work/repo   # any path also works, even outside ~/projects
+d up kite-lodz              # a bare name → ~/projects/kite-lodz
+d up .                      # the current directory (cd into the project first); d up alone means the same
+d up ~/work/repo            # any path also works, even outside ~/projects
+d up --rebuild kite-lodz    # recreate the container, applying devcontainer.json changes
 ```
 
 Use this from any fresh terminal to get back into a project whose container is stopped (or was never
@@ -107,6 +108,17 @@ folder directly; omitting it means `.`. State is keyed off the folder basename, 
 `~/projects/kite-lodz` reuses the same Claude memory as `d up kite-lodz`. `d up` never scaffolds or
 clones; it errors if the folder (or its `.devcontainer/`) is missing. `devcontainer up` is idempotent,
 so it's safe whether the container is stopped, missing, or already running.
+
+**`--rebuild`** recreates the container from scratch. Reach for it when you change something that's
+baked at container-create time — a mount, `runArgs`, the image, `containerEnv` — since a plain `d up`
+only reconnects and never notices. Because `seed`/`clone` *copy* the template's `.devcontainer/` into
+the project at creation (and don't re-copy on resume), an existing project holds a stale
+`devcontainer.json`; `--rebuild` first re-syncs `.devcontainer/` from the template it matches (by
+`image`), then passes `--remove-existing-container`. Your code and Claude state live on host mounts and
+survive — only the container layer is rebuilt (this is how you'd give an existing project the
+`claude-shots` mount, for instance). If the project's image matches no template it recreates from the
+existing `.devcontainer/` as-is and tells you to add new mounts by hand. It's the seeded-project
+counterpart to `cc --rebuild`.
 
 > Reconnect with the **same** CLI you created the project with (`devcontainer`). `devcontainer` and
 > `devpod` each build their own container from the same `devcontainer.json`; mixing them makes one
@@ -220,7 +232,7 @@ a transient inbox; the mount is read-write so this cleanup works).
 Notes:
 - The folder is **global** — one pick covers `cc` and every seeded/cloned project.
 - Mounts are fixed at container-create time, so an **existing** project/`cc` needs a rebuild
-  (`d seed …` / `cc --rebuild`) before the mount appears.
+  (`d up --rebuild <name>` / `cc --rebuild`) before the mount appears.
 - The host folder is visible (`~/claude-shots`) so it's selectable in the macOS folder picker; inside the
   container it's the hidden `~/.claude-shots`.
 
