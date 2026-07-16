@@ -21,12 +21,12 @@ d help                               # list commands
 put on your PATH; `seed`/`clone`/`up`/`unseed` are reached through `d`.
 
 **Live write-back.** This repo is bind-mounted into every container and `~/.claude` is wired to it
-(`CLAUDE.md`/`settings.json` via symlink, `general/skills/` via a direct bind mount), so config is
-shared, not copied. Editing a skill or rule (or approving a permission) inside a container writes
-straight back to your host clone — visible to every other container on this machine instantly, no git
-needed. To share beyond this machine, `git commit && git push` from the host clone; other machines pick
-it up on `git pull`. Adding or removing a skill is live too (the whole dir is mounted); a running
-`claude` just needs a restart to rescan.
+(`CLAUDE.md`/`settings.json` via symlink, `general/skills/` and `general/commands/` via direct bind
+mounts), so config is shared, not copied. Editing a skill, command, or rule (or approving a permission)
+inside a container writes straight back to your host clone — visible to every other container on this
+machine instantly, no git needed. To share beyond this machine, `git commit && git push` from the host
+clone; other machines pick it up on `git pull`. Adding or removing a skill or command is live too (the
+whole dir is mounted); a running `claude` just needs a restart to rescan.
 
 ## One-time host setup (macOS + OrbStack)
 
@@ -189,11 +189,11 @@ changes, since the token is captured at container-create time.
 `~/claude-dev-env` is bind-mounted into every container. Its `bootstrap.sh <tech>` (run by
 `postCreateCommand`) writes a 2-line `~/.claude/CLAUDE.md` that `@import`s `general/CLAUDE.md` +
 `frameworks/<tech>/CLAUDE.md` and symlinks `general/settings.json` to `~/.claude/settings.json`. Skills
-aren't wired by bootstrap: `general/skills/` is bind-mounted straight onto `~/.claude/skills/` by the
-devcontainer, so adding/removing a skill on the host is live (no bootstrap re-run — just restart
-`claude` to rescan). Because all of this points at the mount, edits on the host take effect live, and
-in-session approvals/skill edits write **back** into this repo — commit them and every future project
-inherits them.
+and commands aren't wired by bootstrap: `general/skills/` and `general/commands/` are bind-mounted
+straight onto `~/.claude/skills/` and `~/.claude/commands/` by the devcontainer, so adding/removing one
+on the host is live (no bootstrap re-run — just restart `claude` to rescan). Because all of this points
+at the mount, edits on the host take effect live, and in-session approvals/skill/command edits write
+**back** into this repo — commit them and every future project inherits them.
 
 Per-project Claude state lives on the host at `~/claude-state/<name>/` and survives container rebuilds:
 `projects/` (session transcripts/memory) mounts to `~/.claude/projects`, and `claude.json` mounts to

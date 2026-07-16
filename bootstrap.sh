@@ -38,8 +38,9 @@ mkdir -p "$CLAUDE_HOME"
 # 2. General settings — symlink so in-session approvals write back to the repo.
 ln -sfn "$REPO/general/settings.json" "$CLAUDE_HOME/settings.json"
 
-# Skills are no longer wired here: general/skills is bind-mounted straight onto ~/.claude/skills
-# by the devcontainer (see the template devcontainer.json), so add/remove is live with no re-run.
+# Skills and commands are no longer wired here: general/skills and general/commands are
+# bind-mounted straight onto ~/.claude/skills and ~/.claude/commands by the devcontainer (see the
+# template devcontainer.json), so add/remove is live with no re-run.
 
 # 3. UI defaults — merge general/claude.json (theme, onboarding) into ~/.claude.json without
 #    clobbering keys Claude manages (userID, machineID, history, per-project trust). Only fills

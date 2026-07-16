@@ -20,6 +20,11 @@
     // claude to pick it up). Deletions propagate too — no stale symlinks. Fixed at create time.
     "source=${localEnv:CLAUDE_DEV_ENV}/general/skills,target=/home/node/.claude/skills,type=bind",
 
+    // General commands → the user-scope commands dir, mounted live for the same reason as
+    // skills above: edit general/commands/ on the host, every container picks it up with no
+    // bootstrap re-run (restart claude to pick it up). Fixed at create time.
+    "source=${localEnv:CLAUDE_DEV_ENV}/general/commands,target=/home/node/.claude/commands,type=bind",
+
     // Shared screenshot inbox. Take a macOS screenshot to file with ~/claude-shots picked as the
     // destination (Cmd+Shift+5 → Options → Save to → Other Location…, one-time); it shows up here
     // and Claude reads the newest, then deletes it (see general/CLAUDE.md). Read-write so cleanup
