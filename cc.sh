@@ -84,6 +84,12 @@ if ! exists; then
   [[ -f "$HOME/.claude/.credentials.json" ]] && \
     creds_mount=(-v "$HOME/.claude/.credentials.json":/home/node/.claude/.credentials.json)
 
+  # Git identity: read-only mount of the host's ~/.gitconfig so commits use your real name/email
+  # with no per-container `git config --global` setup.
+  gitconfig_mount=()
+  [[ -f "$HOME/.gitconfig" ]] && \
+    gitconfig_mount=(-v "$HOME/.gitconfig":/home/node/.gitconfig:ro)
+
   docker run -d --name "$NAME" \
     -e CLAUDE_CODE_OAUTH_TOKEN \
     -v "$CLAUDE_DEV_ENV":/home/node/claude-dev-env \
@@ -93,6 +99,7 @@ if ! exists; then
     -v "$WORKSPACE":/workspace \
     -v "$HOME/claude-shots":/home/node/.claude-shots \
     ${ssh_mount[@]+"${ssh_mount[@]}"} ${creds_mount[@]+"${creds_mount[@]}"} \
+    ${gitconfig_mount[@]+"${gitconfig_mount[@]}"} \
     -w /workspace \
     "$IMAGE" sleep infinity >/dev/null
 

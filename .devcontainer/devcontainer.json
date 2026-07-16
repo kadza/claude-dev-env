@@ -39,7 +39,12 @@
 
     // SSH agent socket (§8). macOS + OrbStack exposes the host agent at this fixed path.
     // On Linux instead use: source=${localEnv:SSH_AUTH_SOCK},target=/ssh-agent,type=bind
-    "source=/run/host-services/ssh-auth.sock,target=/ssh-agent,type=bind"
+    "source=/run/host-services/ssh-auth.sock,target=/ssh-agent,type=bind",
+
+    // Git identity. Read-only mount of the host's ~/.gitconfig so commits use your real
+    // name/email with no per-container `git config --global` setup. Requires the host file
+    // to exist and have user.name/user.email set.
+    "source=${localEnv:HOME}/.gitconfig,target=/home/node/.gitconfig,type=bind,readonly"
 
     // Claude credentials (§8). On macOS creds live in the Keychain, not a file, so we pass
     // an OAuth token via containerEnv below instead of mounting ~/.claude/.credentials.json.
