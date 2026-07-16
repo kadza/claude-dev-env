@@ -9,6 +9,16 @@
   //   in use on the host collides. Network mode is fixed at create time — recreate the container to apply.
   "runArgs": ["--name", "${localWorkspaceFolderBasename}", "--network=host"],
 
+  // Mount the repo at the same absolute path the host uses, instead of the devcontainer default
+  // of remapping it to /workspaces/<name>. git worktree (e.g. .claude/worktrees/<name>/ created by
+  // Claude Code) stores absolute paths in its linkage files; if the container and host see the repo
+  // at different paths, a worktree created in the container resolves as broken from the host side.
+  // Using ${localWorkspaceFolder} as both source and target keeps the path identical on both sides.
+  // Fixed at container-create time — rebuild to apply. May not work on Docker Desktop for Mac
+  // without OrbStack, or WSL with path-translation quirks — verify the container still builds.
+  "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind,consistency=cached",
+  "workspaceFolder": "${localWorkspaceFolder}",
+
   "mounts": [
     // The config repo — single host clone, live write-back (§7). Source path is configurable:
     // set CLAUDE_DEV_ENV on the host (seed.sh does this automatically; add it to your shell

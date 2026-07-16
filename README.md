@@ -246,3 +246,20 @@ devcontainer, bind-mount + clone this repo and run once:
 ```
 The user-level `~/.claude` stub then covers the general + framework layers with zero footprint in the
 project repo. Keep project-specific rules in that project's own config.
+
+## Git worktrees
+
+The templates mount the project at the **same absolute path on the host and in the container**
+(`workspaceMount`/`workspaceFolder` set to `${localWorkspaceFolder}`), instead of the devcontainer
+default of remapping it to `/workspaces/<name>`. This matters for `git worktree` (e.g.
+`.claude/worktrees/<name>/`, which Claude Code creates for parallel work): its linkage files store
+absolute paths, so a worktree created inside the container would otherwise resolve as broken/removed
+from the host, and vice versa — same files, different path string depending on which side is looking.
+
+This is fixed at container-create time, so it only applies to new or `--rebuild`ed containers; a
+worktree created before the rebuild keeps stale absolute paths baked into its `.git` linkage files and
+needs a one-time `git worktree repair`, run from whichever side you want it usable from next.
+
+Caveat: mounting at an arbitrary host-style absolute path may not work on Docker Desktop for Mac
+without OrbStack, or on WSL with path-translation quirks — if you hit mount errors after rebuilding,
+verify the container still builds and starts.
