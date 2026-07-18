@@ -1,0 +1,3 @@
+# Git worktree fix documented in its own README section
+
+The worktree fix gets a dedicated "## Git worktrees" section in `README.md`, placed after "## Existing projects" and before "## Screenshots into the container", rather than being folded into "## One-time host setup". The README already gives standalone sections to notable mount-related behavior (the screenshots section is the precedent); worktree visibility is a template behavior change, not a one-time host prerequisite, so it doesn't fit the setup-steps list. Rejected: folding it into "## One-time host setup (macOS + OrbStack)" — that section covers one-time host prerequisites (devcontainer CLI, ssh-agent, auth token), and this fix reads oddly bundled in there.

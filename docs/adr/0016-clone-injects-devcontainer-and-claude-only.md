@@ -1,0 +1,3 @@
+# Clone injects only `.devcontainer/` + `.claude/`, no scaffold source
+
+Clone injects `.devcontainer/` (replaced wholesale) and `.claude/` (merged in, so a repo's other `.claude/` files survive and only `settings.local.json` is written) from the template — no scaffold source, no template `.gitignore`. `.devcontainer/` is the env glue and `.claude/settings.local.json` is the per-tech permission allowlist worth carrying over; the repo already has its own source and `.gitignore`. Rejected: `.devcontainer/` only (loses the pre-approved permission allowlist); everything-except-source (the template's `.gitignore` would shadow the repo's own rules).

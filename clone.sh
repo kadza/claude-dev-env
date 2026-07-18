@@ -2,7 +2,7 @@
 # Runs on the HOST. Clones an existing GitHub repo into a project, injects the Claude env glue
 # (the tech template's .devcontainer/ + .claude/), starts its devcontainer, and drops you into a
 # shell inside where Claude Code is configured. The counterpart to seed.sh for repos that already
-# exist on GitHub — see §12 in decisions.md.
+# exist on GitHub — see docs/adr/0012 through 0018 for the clone-command decisions.
 # Usage: clone.sh <tech> <url> [name]
 #
 # Config repo location: derived from where this script lives and exported so the templates'

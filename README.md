@@ -3,7 +3,7 @@
 A seed tool. `d seed <tech> <name>` scaffolds a new project, starts its devcontainer, and drops you into
 a shell where Claude Code is fully configured from this repo. `d clone <tech> <url> [name]` does the same
 for a repo that already exists on GitHub — cloning it and injecting the env glue. See
-[`decisions.md`](decisions.md) for the full design and rationale.
+[`docs/adr/`](docs/adr/) for the design decisions and rationale behind this repo.
 
 **One command to rule them.** `d` is the umbrella that dispatches to everything below — it's the only
 project command you install (plus `cc`, the standalone scratch box):

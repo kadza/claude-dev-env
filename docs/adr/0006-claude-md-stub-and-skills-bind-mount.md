@@ -1,0 +1,5 @@
+# Composing layers inside ~/.claude: generated CLAUDE.md stub, bind-mounted skills
+
+`bootstrap.sh` generates a 2-line `~/.claude/CLAUDE.md` stub containing absolute `@import`s of `general/CLAUDE.md` and `frameworks/<tech>/CLAUDE.md` — content stays versioned in this repo, the stub is just regenerated, never hand-edited. Rejected: a symlink + relative `@import` (resolution through symlinks is fragile); concatenation (edits to the repo wouldn't take effect live).
+
+Skills are handled differently: `general/skills/` is bind-mounted straight onto `~/.claude/skills/` by the devcontainer, so add/remove/edit is live with no bootstrap involvement (a running `claude` just needs a restart to rescan). Rejected: per-skill symlinks created by bootstrap (a new skill needed a bootstrap re-run, and deletions left dangling symlinks behind); copying (loses write-back). Framework-scoped skills were dropped too — general skills apply everywhere, and per-framework needs can live in a project's own `.claude/skills/` if they ever arise.

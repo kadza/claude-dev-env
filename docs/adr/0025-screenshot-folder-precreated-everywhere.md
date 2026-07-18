@@ -1,0 +1,3 @@
+# Screenshot folder pre-created in setup.sh and every bring-up script
+
+`mkdir -p "$HOME/claude-shots"` runs in `setup.sh` *and* in `seed.sh`, `up.sh`, `clone.sh`, and `cc.sh`, next to the existing state-dir precreation. A bind source must exist at container-create time, and `setup.sh` isn't guaranteed to have run before a given bring-up (existing installs, a fresh clone + `d seed` without re-running `setup.sh`). This mirrors how the repo already precreates `~/claude-state/<name>/{projects,claude.json}`. Rejected: `setup.sh` only — minimal, but a bring-up run before `setup.sh` would fail the mount with "field Source must not be empty".

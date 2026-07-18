@@ -1,0 +1,3 @@
+# Clone's project name defaults to the repo basename, with an override
+
+`clone <tech> <url> [name]` defaults the project name to the repo basename (strip a trailing `/` then `.git`: `git@github.com:owner/repo.git` → `repo`), with an optional 3rd argument to override. This matches "take the name from GitHub" for the common case, while the override escapes the two collision cases (two owners with the same repo name; a clash with an existing scaffold under `~/projects/`). Rejected: always using `owner-repo` (longer dir/container names, not how you'd normally refer to the project); basename with a hard error on collision (the override argument is a lighter escape hatch).

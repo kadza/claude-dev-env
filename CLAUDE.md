@@ -7,8 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 `claude-dev-env` is not an application — it's a **seed tool** and shared config repo for spinning up
 devcontainer-based Claude Code environments. One host clone of this repo is bind-mounted into every
 container it creates, so config changes (and in-session permission approvals, skill/command edits) write
-back live to this repo instead of being copied per-project. See [`decisions.md`](decisions.md) for the full
-design rationale (written as a Q&A grilling transcript) and [`README.md`](README.md) for user-facing usage.
+back live to this repo instead of being copied per-project. See [`docs/adr/`](docs/adr/) for the design
+decisions and rationale behind this repo, and [`README.md`](README.md) for user-facing usage.
 
 There is no build/lint/test step for this repo itself — the "code" is shell scripts and config files
 consumed by the `devcontainer` CLI and Claude Code. Verifying a change means running the relevant script

@@ -1,0 +1,3 @@
+# Config delivered via postCreateCommand + bootstrap.sh, not a devcontainer feature
+
+Each template's `.devcontainer` runs a `postCreateCommand` that installs Claude Code and calls `bootstrap.sh <tech>` from the mounted repo. Devcontainer features run at build time, before home/auth exist, and would need to be published; this setup isn't VS Code, so `dotfiles.repository` auto-clone doesn't apply either. Framework selection has no detection logic — each template's `postCreateCommand` simply names its own tech, since the template already knows what it is. Trade-off accepted: existing/team projects run bootstrap manually once (see [0011](./0011-existing-projects-manual-bootstrap.md)).

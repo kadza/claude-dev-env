@@ -1,0 +1,3 @@
+# Clone always overwrites an existing `.devcontainer/`
+
+If the cloned repo already ships its own `.devcontainer/`, clone always overwrites it wholesale — no backup, no conflict check. Our mechanism depends on our own `devcontainer.json` (the config-repo bind mount + the `bootstrap.sh <tech>` call); a repo's own devcontainer lacks these, so the Claude environment wouldn't come up. Since nothing is committed ([0014](./0014-clone-injected-files-left-untracked.md)), overwriting is non-destructive to the repo's history — the original is recoverable via git. Rejected: abort-with-message (safe but obstructs the common goal); overwrite with a timestamped backup (needless once nothing is being committed); a side path + `devcontainer up --config` (more moving parts).
