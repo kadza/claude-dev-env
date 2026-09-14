@@ -8,6 +8,7 @@
 #   d up     [--rebuild] [<name>|.]         start an existing project's container + drop in (. = cwd)
 #   d unseed [-y] [--keep-state] <name>    tear a project down (container + dirs)
 #   d cc     [claude args…]                open Claude in the shared scratch container
+#   d claude [<name>|.] [claude args…]     exec claude in a running project container (Herdr-compatible)
 #   d help                                 show this list
 #
 # CLAUDE_DEV_ENV is resolved from this script's location and exported here, so every dispatched
@@ -26,14 +27,14 @@ SELF="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 export CLAUDE_DEV_ENV="${CLAUDE_DEV_ENV:-$SELF}"
 
 usage() {
-  sed -n '5,12p' "$SELF/d.sh" | sed 's/^# \{0,1\}//'
+  sed -n '5,13p' "$SELF/d.sh" | sed 's/^# \{0,1\}//'
 }
 
 CMD="${1:-help}"
 [[ $# -gt 0 ]] && shift
 
 case "$CMD" in
-  seed|clone|up|unseed|cc)
+  seed|clone|up|unseed|cc|claude)
     [[ -f "$SELF/$CMD.sh" ]] || { echo "d: $SELF/$CMD.sh not found" >&2; exit 1; }
     exec "$SELF/$CMD.sh" "$@" ;;
   -h|--help|help)
