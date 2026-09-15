@@ -4,7 +4,10 @@
       "Bash(npm run *)",
       "Bash(npm test*)",
       "Bash(npx vitest*)",
-      "Bash(npx tsc*)"
+      "Bash(npx tsc*)",
+      "Bash(npx oxlint*)",
+      "Bash(npx oxfmt*)",
+      "Bash(npx stylelint*)"
     ]
   }
 }

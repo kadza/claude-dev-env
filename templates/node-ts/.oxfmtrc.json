@@ -1,0 +1,71 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "semi": false,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "all",
+  "sortImports": {
+    "internalPattern": [],
+    "order": "asc",
+    "newlinesBetween": true,
+    "customGroups": [
+      {
+        "groupName": "se-style-parent",
+        "selector": "side_effect_style",
+        "elementNamePattern": ["../**"]
+      },
+      {
+        "groupName": "se-style-sibling",
+        "selector": "side_effect_style",
+        "elementNamePattern": ["./**"]
+      },
+      {
+        "groupName": "se-style-external",
+        "selector": "side_effect_style",
+        "elementNamePattern": ["**"]
+      },
+      {
+        "groupName": "style-parent",
+        "selector": "style",
+        "elementNamePattern": ["../**"]
+      },
+      {
+        "groupName": "style-sibling",
+        "selector": "style",
+        "elementNamePattern": ["./**"]
+      },
+      {
+        "groupName": "style-external",
+        "selector": "style",
+        "elementNamePattern": ["**"]
+      }
+    ],
+    "groups": [
+      "builtin",
+      "external",
+      "internal",
+      "parent",
+      "sibling",
+      "index",
+      "se-style-external",
+      { "newlinesBetween": false },
+      "se-style-parent",
+      { "newlinesBetween": false },
+      "se-style-sibling",
+      { "newlinesBetween": false },
+      "side_effect_style",
+      "style-external",
+      { "newlinesBetween": false },
+      "style-parent",
+      { "newlinesBetween": false },
+      "style-sibling",
+      { "newlinesBetween": false },
+      "style",
+      "side_effect",
+      "unknown"
+    ]
+  },
+  "sortPackageJson": false,
+  "ignorePatterns": []
+}

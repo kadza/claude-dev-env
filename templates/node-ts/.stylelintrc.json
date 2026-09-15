@@ -1,0 +1,31 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "ignoreFiles": [
+    "_build/**",
+    "**/_build/**",
+    "**/dist/**",
+    "node_modules/**",
+    "**/node_modules/**"
+  ],
+  "plugins": ["stylelint-order", "stylelint-value-no-unknown-custom-properties"],
+  "rules": {
+    "alpha-value-notation": "number",
+
+    "declaration-no-important": true,
+    "import-notation": null,
+    "keyframe-declaration-no-important": true,
+    "no-descending-specificity": null,
+    "order/properties-alphabetical-order": true,
+    "property-no-vendor-prefix": true,
+    "selector-class-pattern": null,
+    "selector-pseudo-class-no-unknown": [
+      true,
+      {
+        "ignorePseudoClasses": ["global"]
+      }
+    ],
+    "shorthand-property-no-redundant-values": null,
+    "value-keyword-case": ["lower", { "camelCaseSvgKeywords": true }],
+    "value-no-vendor-prefix": true
+  }
+}
