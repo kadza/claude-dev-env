@@ -77,7 +77,8 @@
     // Run `claude setup-token` once on the host and export the result, e.g.:
     //   export CLAUDE_CODE_OAUTH_TOKEN="$(claude setup-token)"
     // so seeded containers start authenticated with no login prompt.
-    "CLAUDE_CODE_OAUTH_TOKEN": "${localEnv:CLAUDE_CODE_OAUTH_TOKEN}"
+    "CLAUDE_CODE_OAUTH_TOKEN": "${localEnv:CLAUDE_CODE_OAUTH_TOKEN}",
+    "NODE_OPTIONS": "--openssl-legacy-provider --max-old-space-size=4096"
   },
 
   // See .devcontainer/setup.sh for the steps (chown state mounts, install Claude, npm install -g

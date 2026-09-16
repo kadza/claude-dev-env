@@ -10,6 +10,8 @@ NAME="${1:?usage: setup.sh <project-name>}"
 # bootstrap and Claude can write.
 sudo chown "$(id -un):$(id -gn)" /home/node/.claude /home/node/.claude.json
 
+pnpm config set store-dir ~/.pnpm-store
+
 # Claude Code CLI.
 curl -fsSL https://claude.ai/install.sh | bash
 
