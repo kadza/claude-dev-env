@@ -9,7 +9,7 @@
 #   invalid mount config for type "bind": field Source must not be empty.
 # seed/clone export it automatically; `up` does the same so a bare reconnect just works.
 #
-# Usage: up.sh [--rebuild] [<name>|<path>]
+# Usage: up.sh [--rebuild] [--project-config <path>] [--project-config-target <rel-path>] [<name>|<path>]
 #   up kite-lodz        reconnect to ~/projects/kite-lodz (a bare name → ~/projects/<name>)
 #   up .                reconnect to the current directory (any path works, not just ~/projects)
 #   up                  same as `up .`
@@ -23,17 +23,41 @@
 # re-copy on resume, so an existing project otherwise keeps a stale devcontainer.json — then passes
 # --remove-existing-container so the box is recreated fresh. Your code (~/projects/<name>) and Claude
 # state (~/claude-state/<name>) live on host mounts and survive; only the container layer is rebuilt.
+#
+# --project-config <path>: see seed.sh's header and docs/adr/0030 through 0035. Always (re)points
+# this project's .claude/ + CLAUDE.md symlinks at <path>, but the container's mount only reflects it
+# once combined with --rebuild (mounts are baked in at container create/rebuild time).
+#
+# --project-config-target <rel-path>: place the symlinks in a subdirectory instead of the project
+# root — see seed.sh's header and docs/adr/0036. Requires --project-config.
 set -euo pipefail
 
 REBUILD=0
+PROJECT_CONFIG=""
+PROJECT_CONFIG_TARGET=""
 ARG=""
-for a in "$@"; do
-  case "$a" in
-    --rebuild) REBUILD=1 ;;
-    *)         ARG="$a" ;;
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --rebuild) REBUILD=1; shift ;;
+    --project-config)
+      PROJECT_CONFIG="${2:-}"
+      [[ -n "$PROJECT_CONFIG" ]] || { echo "error: --project-config requires a path" >&2; exit 1; }
+      shift 2 ;;
+    --project-config-target)
+      PROJECT_CONFIG_TARGET="${2:-}"
+      [[ -n "$PROJECT_CONFIG_TARGET" ]] || { echo "error: --project-config-target requires a path" >&2; exit 1; }
+      shift 2 ;;
+    *) ARG="$1"; shift ;;
   esac
 done
 ARG="${ARG:-.}"
+if [[ -n "$PROJECT_CONFIG_TARGET" ]]; then
+  [[ -n "$PROJECT_CONFIG" ]] || { echo "error: --project-config-target requires --project-config" >&2; exit 1; }
+  case "$PROJECT_CONFIG_TARGET" in
+    /*) echo "error: --project-config-target must be relative to the project root, not absolute: $PROJECT_CONFIG_TARGET" >&2; exit 1 ;;
+    *..*) echo "error: --project-config-target must not contain '..': $PROJECT_CONFIG_TARGET" >&2; exit 1 ;;
+  esac
+fi
 
 # Resolve this script's real location through any symlink chain (up is meant to be symlinked
 # onto PATH, e.g. via `d`), so the config-repo path is the clone, not the bin dir.
@@ -71,6 +95,30 @@ STATE="$HOME/claude-state/$NAME"
 [[ -f "$PROJECT/.devcontainer/devcontainer.json" ]] || { echo "error: no .devcontainer/ in $PROJECT — is this a seeded/cloned project?" >&2; exit 1; }
 command -v devcontainer >/dev/null 2>&1 || { echo "error: 'devcontainer' CLI not on PATH (npm i -g @devcontainers/cli)" >&2; exit 1; }
 [[ -n "${SSH_AUTH_SOCK:-}" ]] || echo "warning: SSH_AUTH_SOCK unset — is ssh-agent running with your key loaded? git over SSH in the container may fail." >&2
+if [[ -n "$PROJECT_CONFIG" ]]; then
+  [[ -d "$PROJECT_CONFIG" ]] || { echo "error: --project-config path not found: $PROJECT_CONFIG" >&2; exit 1; }
+  PROJECT_CONFIG="$(cd "$PROJECT_CONFIG" && pwd)"
+fi
+
+# Project config mount source (docs/adr/0033): always exported — see seed.sh for the full rationale.
+PROJECT_CONFIG_EMPTY="$HOME/.claude-project-config-empty"
+mkdir -p "$PROJECT_CONFIG_EMPTY"
+export PROJECT_CONFIG_DIR="${PROJECT_CONFIG:-$PROJECT_CONFIG_EMPTY}"
+
+# Project config (docs/adr/0030, 0034, 0036): replace .claude/ + CLAUDE.md wholesale with
+# symlinks — see seed.sh. Lands at the project root unless --project-config-target says otherwise.
+# Done immediately regardless of --rebuild, but the container's mount only reflects the new path
+# once the container is actually recreated.
+if [[ -n "$PROJECT_CONFIG" ]]; then
+  TARGET_DIR="$PROJECT"
+  [[ -z "$PROJECT_CONFIG_TARGET" ]] || TARGET_DIR="$PROJECT/$PROJECT_CONFIG_TARGET"
+  mkdir -p "$TARGET_DIR"
+  rm -rf "$TARGET_DIR/.claude" "$TARGET_DIR/CLAUDE.md"
+  ln -s "$PROJECT_CONFIG/.claude" "$TARGET_DIR/.claude"
+  ln -s "$PROJECT_CONFIG/CLAUDE.md" "$TARGET_DIR/CLAUDE.md"
+  echo "up: linked .claude/ + CLAUDE.md to project config at $PROJECT_CONFIG (in ${PROJECT_CONFIG_TARGET:-project root})"
+  [[ "$REBUILD" -eq 1 ]] || echo "up: pass --rebuild too for the container's mount to pick this path up." >&2
+fi
 
 # Persisted Claude state (§9). Mount targets must pre-exist; idempotent. Identical to seed.sh —
 # guard against a state dir that was pruned while the project stuck around.

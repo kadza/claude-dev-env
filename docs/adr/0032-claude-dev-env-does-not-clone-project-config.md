@@ -1,0 +1,3 @@
+# claude-dev-env never clones the project config repo itself
+
+`--project-config` takes a path to an already-existing host directory; claude-dev-env never runs `git clone` on the user's behalf. The user manages that clone (location, remote, auth, updates) exactly as they already do today, and cloning it ourselves would mean owning a second git-credential/URL surface for no real benefit over a plain path argument. Rejected: an earlier `d config <name> <url>` design that cloned the repo into a claude-dev-env-managed host directory — more automation, but added clone-lifecycle bookkeeping (idempotent re-clone, update/pull, per-repo subpath conventions) for a step the user was already doing manually and wanted kept simple.

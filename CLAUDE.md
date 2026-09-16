@@ -21,12 +21,20 @@ consumed by the `devcontainer` CLI and Claude Code. Verifying a change means run
 symlinked onto PATH by `setup.sh`; everything else is reached through `d`.
 
 ```sh
-d seed   <tech> <name>                # scaffold a new project from templates/<tech>/, bring up + exec in
-d clone  <tech> <url> [name]          # git clone an existing GitHub repo + inject template's env glue
-d up     [--rebuild] [<name>|<path>]  # reconnect to an existing project's container (. = cwd)
+d seed   <tech> <name> [--project-config <path>] [--project-config-target <rel-path>]
+d clone  <tech> <url> [name] [--project-config <path>] [--project-config-target <rel-path>]
+d up     [--rebuild] [--project-config <path>] [--project-config-target <rel-path>] [<name>|<path>]
 d unseed [-y] [--keep-state] <name>   # tear down a project's container + host dirs
 d cc     [claude args…]               # open Claude in the single shared scratch container
 ```
+
+`--project-config <path>` (all three): symlinks the project's `.claude/` + `CLAUDE.md` wholesale to
+an external, unversioned directory you manage yourself (e.g. a separate git repo you've already
+cloned) — a **project config**, distinct from the three layers below since it isn't owned or
+versioned by claude-dev-env. On `up`, pair it with `--rebuild` for the mount to actually take
+effect (mounts are baked in at container create/rebuild time). `--project-config-target <rel-path>`
+places the symlinks in a subdirectory instead of the project root, for a repo that nests the real
+project (e.g. a monorepo's `api/`) — requires `--project-config`. See `docs/adr/0030` through `0036`.
 
 Each script is self-documented with an extensive header comment — read the script before modifying it,
 since the comment explains *why*, not just what. `setup.sh` is the one-time host installer (symlinks `d`
@@ -84,6 +92,10 @@ consistently:
 - `~/claude-state/<name>/claude.json` → `~/.claude.json` (theme/onboarding/trust/history).
 - `~/claude-shots` (global, not per-project) → `~/.claude-shots`, the screenshot inbox; read the newest
   file by mtime and delete it after use (see the `screenshot` skill/command and `general/CLAUDE.md`).
+- `~/.claude-project-config-empty` (global, not per-project) — a fixed, always-empty placeholder
+  directory. `seed`/`clone`/`up` export it as `PROJECT_CONFIG_DIR` whenever `--project-config` is
+  omitted, since the templates mount `PROJECT_CONFIG_DIR` unconditionally and its source must
+  always exist. Never written to.
 
 `cc` (the single shared scratch container, `cc.sh`) is the odd one out: general-layer-only (no framework),
 `node:bookworm-slim` instead of a devcontainer image, fixed host dirs (`~/cc-workspace`, `~/cc-state`)

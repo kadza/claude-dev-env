@@ -41,6 +41,15 @@
     // works. Global, not per-project. Fixed at create time — rebuild to add it to an existing box.
     "source=${localEnv:HOME}/claude-shots,target=/home/node/.claude-shots,type=bind",
 
+    // Project config (docs/adr/0030-0035): an external, unversioned directory this project's
+    // .claude/ + CLAUDE.md symlink into (see seed.sh/clone.sh/up.sh's --project-config flag).
+    // Same absolute path as both source and target (like workspaceMount above) so a symlink
+    // resolves identically from the host and the container, regardless of container user/home.
+    // Always present and always resolves to something: seed/clone/up export PROJECT_CONFIG_DIR
+    // pointing at a fixed empty placeholder dir when --project-config isn't given, since a bind
+    // mount's source must always exist.
+    "source=${localEnv:PROJECT_CONFIG_DIR},target=${localEnv:PROJECT_CONFIG_DIR},type=bind",
+
     // Claude runtime state per project, survives rebuilds (§9). Session transcripts/memory:
     "source=${localEnv:HOME}/claude-state/${localWorkspaceFolderBasename}/projects,target=/home/node/.claude/projects,type=bind",
     // ...and ~/.claude.json (onboarding/theme/trust/history) so rebuilds skip onboarding. seed.sh

@@ -1,0 +1,3 @@
+# Project config is a host path, bind-mounted in — not cloned inside the container
+
+`--project-config <path>` takes a path that must already exist on the host; it's bind-mounted into the container rather than cloned or managed from inside it. Container state that isn't on a host mount is lost whenever `d up --rebuild` recreates the container, and this repo's own convention for "external repo whose content must survive rebuilds" is already a host clone + bind mount (see the `CLAUDE_DEV_ENV` mount). Rejected: cloning inside the container, as the original `be-dev-claude-code-config` README describes — simpler one-time setup, but the clone and its symlinks would silently vanish on the next `--rebuild`.
