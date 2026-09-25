@@ -8,15 +8,16 @@
 # path) so you never have to set CLAUDE_DEV_ENV by hand. Advanced override: set CLAUDE_DEV_ENV to
 # mount a config repo other than the one seed.sh lives in.
 #
-# --project-config <path>: symlinks this project's .claude/ + CLAUDE.md wholesale to an external,
-# unversioned directory you manage yourself (a separate git repo you've already cloned), replacing
-# whatever the template put there. The path is bind-mounted into the container at the same absolute
-# path via PROJECT_CONFIG_DIR, always exported below (pointing at a fixed empty placeholder when
-# this flag is omitted) since the templates mount it unconditionally. See docs/adr/0030-0035.
+# --project-config <path>: symlinks this project's .claude/ wholesale to an external, unversioned
+# directory you manage yourself (a separate git repo you've already cloned), replacing whatever the
+# template put there. CLAUDE.md lives inside .claude/ in the project config. The path is
+# bind-mounted into the container at the same absolute path via PROJECT_CONFIG_DIR, always exported
+# below (pointing at a fixed empty placeholder when this flag is omitted) since the templates mount
+# it unconditionally. See docs/adr/0030-0035.
 #
-# --project-config-target <rel-path>: place the symlinks at <rel-path>/.claude + <rel-path>/CLAUDE.md
-# instead of the project root — for a repo that nests the real project in a subdirectory (e.g. a
-# monorepo's api/). Relative to the project root; requires --project-config. See docs/adr/0036.
+# --project-config-target <rel-path>: place the symlink at <rel-path>/.claude instead of the
+# project root — for a repo that nests the real project in a subdirectory (e.g. a monorepo's api/).
+# Relative to the project root; requires --project-config. See docs/adr/0036.
 set -euo pipefail
 
 PROJECT_CONFIG=""
@@ -100,17 +101,17 @@ else
   git -C "$PROJECT" commit -qm "Seed $NAME from $TECH template"
 fi
 
-# Project config (docs/adr/0030): replace .claude/ + CLAUDE.md wholesale with symlinks into the
-# external directory, so edits made from inside the container write back there automatically.
-# Lands at the project root unless --project-config-target says otherwise (docs/adr/0036).
+# Project config (docs/adr/0030): replace .claude/ wholesale with a symlink into the external
+# directory, so edits made from inside the container write back there automatically. CLAUDE.md
+# lives inside .claude/ in the project config. Lands at the project root unless
+# --project-config-target says otherwise (docs/adr/0036).
 if [[ -n "$PROJECT_CONFIG" ]]; then
   TARGET_DIR="$PROJECT"
   [[ -z "$PROJECT_CONFIG_TARGET" ]] || TARGET_DIR="$PROJECT/$PROJECT_CONFIG_TARGET"
   mkdir -p "$TARGET_DIR"
-  rm -rf "$TARGET_DIR/.claude" "$TARGET_DIR/CLAUDE.md"
+  rm -rf "$TARGET_DIR/.claude"
   ln -s "$PROJECT_CONFIG/.claude" "$TARGET_DIR/.claude"
-  ln -s "$PROJECT_CONFIG/CLAUDE.md" "$TARGET_DIR/CLAUDE.md"
-  echo "seed: linked .claude/ + CLAUDE.md to project config at $PROJECT_CONFIG (in ${PROJECT_CONFIG_TARGET:-project root})"
+  echo "seed: linked .claude/ to project config at $PROJECT_CONFIG (in ${PROJECT_CONFIG_TARGET:-project root})"
 fi
 
 # Persisted Claude state (§9). Mount targets must pre-exist; idempotent.

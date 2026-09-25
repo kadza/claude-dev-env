@@ -9,8 +9,8 @@
 # ${localEnv:CLAUDE_DEV_ENV} mount resolves — identical to seed.sh.
 #
 # --project-config <path>: see seed.sh's header and docs/adr/0030 through 0035 — symlinks this
-# project's .claude/ + CLAUDE.md wholesale to an external, unversioned directory you manage
-# yourself, replacing whatever was injected from the template.
+# project's .claude/ to an external, unversioned directory you manage yourself (CLAUDE.md lives
+# inside .claude/ in the project config), replacing whatever was injected from the template.
 #
 # --project-config-target <rel-path>: place the symlinks in a subdirectory instead of the project
 # root — see seed.sh's header and docs/adr/0036 (e.g. a monorepo that nests the real project, like
@@ -123,16 +123,16 @@ else
   echo "clone: injected $INJECTED from '$TECH' template (uncommitted, left in the working tree)."
 fi
 
-# Project config (docs/adr/0030, 0036): replace .claude/ + CLAUDE.md wholesale with symlinks —
-# see seed.sh. Lands at the project root unless --project-config-target says otherwise.
+# Project config (docs/adr/0030, 0036): replace .claude/ wholesale with a symlink — see seed.sh.
+# CLAUDE.md lives inside .claude/ in the project config. Lands at the project root unless
+# --project-config-target says otherwise.
 if [[ -n "$PROJECT_CONFIG" ]]; then
   TARGET_DIR="$PROJECT"
   [[ -z "$PROJECT_CONFIG_TARGET" ]] || TARGET_DIR="$PROJECT/$PROJECT_CONFIG_TARGET"
   mkdir -p "$TARGET_DIR"
-  rm -rf "$TARGET_DIR/.claude" "$TARGET_DIR/CLAUDE.md"
+  rm -rf "$TARGET_DIR/.claude"
   ln -s "$PROJECT_CONFIG/.claude" "$TARGET_DIR/.claude"
-  ln -s "$PROJECT_CONFIG/CLAUDE.md" "$TARGET_DIR/CLAUDE.md"
-  echo "clone: linked .claude/ + CLAUDE.md to project config at $PROJECT_CONFIG (in ${PROJECT_CONFIG_TARGET:-project root})"
+  echo "clone: linked .claude/ to project config at $PROJECT_CONFIG (in ${PROJECT_CONFIG_TARGET:-project root})"
 fi
 
 # Persisted Claude state (§9). Mount targets must pre-exist; idempotent. Identical to seed.sh.

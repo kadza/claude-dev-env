@@ -28,13 +28,14 @@ d unseed [-y] [--keep-state] <name>   # tear down a project's container + host d
 d cc     [claude args…]               # open Claude in the single shared scratch container
 ```
 
-`--project-config <path>` (all three): symlinks the project's `.claude/` + `CLAUDE.md` wholesale to
-an external, unversioned directory you manage yourself (e.g. a separate git repo you've already
-cloned) — a **project config**, distinct from the three layers below since it isn't owned or
-versioned by claude-dev-env. On `up`, pair it with `--rebuild` for the mount to actually take
-effect (mounts are baked in at container create/rebuild time). `--project-config-target <rel-path>`
-places the symlinks in a subdirectory instead of the project root, for a repo that nests the real
-project (e.g. a monorepo's `api/`) — requires `--project-config`. See `docs/adr/0030` through `0036`.
+`--project-config <path>` (all three): symlinks the project's `.claude/` wholesale to an external,
+unversioned directory you manage yourself (e.g. a separate git repo you've already cloned) —
+a **project config**, distinct from the three layers below since it isn't owned or versioned by
+claude-dev-env. `CLAUDE.md` lives inside `.claude/` in the project config (not at the project root).
+On `up`, pair it with `--rebuild` for the mount to actually take effect (mounts are baked in at
+container create/rebuild time). `--project-config-target <rel-path>` places the symlink in a
+subdirectory instead of the project root, for a repo that nests the real project (e.g. a monorepo's
+`api/`) — requires `--project-config`. See `docs/adr/0030` through `0036`.
 
 Each script is self-documented with an extensive header comment — read the script before modifying it,
 since the comment explains *why*, not just what. `setup.sh` is the one-time host installer (symlinks `d`

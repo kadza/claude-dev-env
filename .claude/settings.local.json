@@ -7,7 +7,12 @@
       "Bash(npx tsc*)",
       "Bash(node *)",
       "Bash(git rm *)",
-      "Bash(git mv *)"
+      "Bash(git mv *)",
+      "Bash(bash -n d.sh)",
+      "Bash(bash -n agent.sh)",
+      "Bash(./d.sh help *)",
+      "Bash(./d.sh agent *)",
+      "Bash(echo \"exit=$?\")"
     ]
   }
 }

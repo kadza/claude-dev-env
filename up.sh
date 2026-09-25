@@ -25,8 +25,8 @@
 # state (~/claude-state/<name>) live on host mounts and survive; only the container layer is rebuilt.
 #
 # --project-config <path>: see seed.sh's header and docs/adr/0030 through 0035. Always (re)points
-# this project's .claude/ + CLAUDE.md symlinks at <path>, but the container's mount only reflects it
-# once combined with --rebuild (mounts are baked in at container create/rebuild time).
+# this project's .claude/ symlink at <path>, but the container's mount only reflects it once
+# combined with --rebuild (mounts are baked in at container create/rebuild time).
 #
 # --project-config-target <rel-path>: place the symlinks in a subdirectory instead of the project
 # root — see seed.sh's header and docs/adr/0036. Requires --project-config.
@@ -105,18 +105,17 @@ PROJECT_CONFIG_EMPTY="$HOME/.claude-project-config-empty"
 mkdir -p "$PROJECT_CONFIG_EMPTY"
 export PROJECT_CONFIG_DIR="${PROJECT_CONFIG:-$PROJECT_CONFIG_EMPTY}"
 
-# Project config (docs/adr/0030, 0034, 0036): replace .claude/ + CLAUDE.md wholesale with
-# symlinks — see seed.sh. Lands at the project root unless --project-config-target says otherwise.
-# Done immediately regardless of --rebuild, but the container's mount only reflects the new path
-# once the container is actually recreated.
+# Project config (docs/adr/0030, 0034, 0036): replace .claude/ wholesale with a symlink — see
+# seed.sh. CLAUDE.md lives inside .claude/ in the project config. Lands at the project root unless
+# --project-config-target says otherwise. Done immediately regardless of --rebuild, but the
+# container's mount only reflects the new path once the container is actually recreated.
 if [[ -n "$PROJECT_CONFIG" ]]; then
   TARGET_DIR="$PROJECT"
   [[ -z "$PROJECT_CONFIG_TARGET" ]] || TARGET_DIR="$PROJECT/$PROJECT_CONFIG_TARGET"
   mkdir -p "$TARGET_DIR"
-  rm -rf "$TARGET_DIR/.claude" "$TARGET_DIR/CLAUDE.md"
+  rm -rf "$TARGET_DIR/.claude"
   ln -s "$PROJECT_CONFIG/.claude" "$TARGET_DIR/.claude"
-  ln -s "$PROJECT_CONFIG/CLAUDE.md" "$TARGET_DIR/CLAUDE.md"
-  echo "up: linked .claude/ + CLAUDE.md to project config at $PROJECT_CONFIG (in ${PROJECT_CONFIG_TARGET:-project root})"
+  echo "up: linked .claude/ to project config at $PROJECT_CONFIG (in ${PROJECT_CONFIG_TARGET:-project root})"
   [[ "$REBUILD" -eq 1 ]] || echo "up: pass --rebuild too for the container's mount to pick this path up." >&2
 fi
 
