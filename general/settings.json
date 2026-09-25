@@ -14,7 +14,9 @@
       "Bash(git branch *)",
       "Bash(git stash *)",
       "Skill(*)"
-    ]
+    ],
+    "blockReadsOutsideWorkingDirectories": false
   },
-  "tui": "default"
+  "tui": "default",
+  "theme": "dark"
 }
