@@ -63,7 +63,12 @@
     // Git identity. Read-only mount of the host's ~/.gitconfig so commits use your real
     // name/email with no per-container `git config --global` setup. Requires the host file
     // to exist and have user.name/user.email set.
-    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly"
+    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
+
+    // Claude token — live bind mount of the host's ~/.claude-token (written by `d token --write`).
+    // bootstrap.sh sources it from .bashrc so new shells pick up CLAUDE_CODE_OAUTH_TOKEN without
+    // a container rebuild. setup.sh touches this file on the host so the source always exists.
+    "source=${localEnv:HOME}/.claude-token,target=/home/vscode/.claude-token,type=bind"
 
     // Claude credentials (§8). On macOS creds live in the Keychain, not a file, so we pass
     // an OAuth token via containerEnv below instead of mounting ~/.claude/.credentials.json.

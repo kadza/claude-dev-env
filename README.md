@@ -15,6 +15,7 @@ d up     kite-lodz                   # start an existing project's container + d
 d unseed kite-lodz                   # tear a project down
 d cc     "fix this bug"              # = cc "fix this bug"
 d claude mw-backend1                 # exec claude in a running project container (no shell)
+d token  --write "sk-ant-..."        # save Claude auth token to ~/.claude-token
 d help                               # list commands
 ```
 
@@ -43,12 +44,15 @@ whole dir is mounted); a running `claude` just needs a restart to rescan.
    ```
 3. **ssh-agent** running with your git key loaded (`ssh-add -l` should list it). OrbStack forwards the
    host agent into containers at `/run/host-services/ssh-auth.sock` (already wired in the templates).
-4. **Claude auth token** — on macOS credentials live in the Keychain, not a file, so mint a token once
-   and export it (add to your shell profile):
+4. **Claude auth token** — on macOS credentials live in the Keychain, not a file, so mint a token
+   and save it to `~/.claude-token` (bind-mounted into every container):
    ```sh
-   export CLAUDE_CODE_OAUTH_TOKEN="$(claude setup-token)"
+   d token --write "sk-ant-..."   # or: d token  (runs auth flow inside the cc container)
    ```
-   The templates pass this into the container so `claude` starts authenticated with no login prompt.
+   Every container sources `~/.claude-token` from `.bashrc`, so updating the file on the host takes
+   effect in any container on the next new shell or `claude` restart — no rebuild needed. Activate
+   it in already-open terminals with `source ~/.claude-token`. Add `source ~/.claude-token` to your
+   `~/.zshrc` so new host terminals pick it up too.
    *(On Linux you can instead mount `~/.claude/.credentials.json` — see the commented mount in each
    template's `devcontainer.json`.)*
 5. **Run `setup.sh`** — links the commands and wires your shell profile in one shot:
@@ -182,8 +186,9 @@ host dirs that survive restarts (and `--rebuild`):
 - `~/cc-state/` → Claude memory/history/onboarding (`projects/` and `claude.json`).
 
 Teardown is just Docker (no `unseed` needed): `docker rm -f cc` (state and workspace on the host are
-kept). Use `cc --rebuild` if you only want to refresh the container itself — e.g. after your auth token
-changes, since the token is captured at container-create time.
+kept). Use `cc --rebuild` if you only want to refresh the container itself. Auth token changes don't
+require a rebuild — `~/.claude-token` is bind-mounted, so `source ~/.bashrc` (or opening a new shell)
+inside the container picks up the updated token immediately.
 
 ## `d claude` — exec claude directly (no shell)
 
@@ -227,9 +232,10 @@ Because it runs on every bootstrap, it's self-healing: re-run `bootstrap.sh <tec
 apply new defaults, no re-seed needed. Edit `general/claude.json` to change the defaults. Note: theme
 lives here, in `~/.claude.json` — **not** in `settings.json` (which has no `theme` key).
 
-Auth is separate and file-less: `claude` reads `CLAUDE_CODE_OAUTH_TOKEN` from the environment at startup
-(see host setup step 4), so there is intentionally **no** `~/.claude/.credentials.json` inside the
-container — that's expected, not a failure.
+Auth is handled via `~/.claude-token` — a file on the host bind-mounted into every container. Write
+it once with `d token --write "<token>"` and every container's `.bashrc` sources it automatically, so
+`CLAUDE_CODE_OAUTH_TOKEN` is set in any new shell or after `source ~/.bashrc`. There is intentionally
+**no** `~/.claude/.credentials.json` inside the container on macOS — that's expected, not a failure.
 
 ## Screenshots into the container
 

@@ -98,6 +98,7 @@ if ! exists; then
     -v "$STATE/claude.json":/home/node/.claude.json \
     -v "$WORKSPACE":/workspace \
     -v "$HOME/claude-shots":/home/node/.claude-shots \
+    -v "$HOME/.claude-token":/home/node/.claude-token \
     ${ssh_mount[@]+"${ssh_mount[@]}"} ${creds_mount[@]+"${creds_mount[@]}"} \
     ${gitconfig_mount[@]+"${gitconfig_mount[@]}"} \
     -w /workspace \

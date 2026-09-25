@@ -96,4 +96,11 @@ if [[ -n "$PROJECT" ]]; then
   fi
 fi
 
+# 5. Token file — if ~/.claude-token exists (written by `d token --write` on the host or pushed
+#    in by token.sh into running containers), source it so CLAUDE_CODE_OAUTH_TOKEN is set for
+#    every new shell session without needing it baked into the container env at creation time.
+if ! grep -qF 'claude-token' "$HOME/.bashrc" 2>/dev/null; then
+  printf '%s\n' '[ -f "$HOME/.claude-token" ] && . "$HOME/.claude-token"' >> "$HOME/.bashrc"
+fi
+
 echo "bootstrap: wired $CLAUDE_HOME${TECH:+ for tech '$TECH'}${PROJECT:+ (prompt '$PROJECT')} from $REPO"

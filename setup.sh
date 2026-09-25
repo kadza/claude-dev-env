@@ -71,6 +71,11 @@ echo "$verb claude-dev-env block in $PROFILE"
 mkdir -p "$HOME/claude-shots"
 echo "created $HOME/claude-shots (shared screenshot inbox)"
 
+# Token file — the source for the ~/.claude-token bind mount in every container. Must exist before
+# any container is created; touch only (never overwrite an existing token).
+touch "$HOME/.claude-token"
+echo "ensured $HOME/.claude-token (run 'd token --write <token>' to populate)"
+
 # --- next steps ----------------------------------------------------------------------------------
 echo
 echo "done — open a new shell, or: source \"$PROFILE\""
