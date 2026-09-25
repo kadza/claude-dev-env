@@ -14,6 +14,7 @@ d clone  node-ts git@github.com:owner/repo.git   # from an existing GitHub repo
 d up     kite-lodz                   # start an existing project's container + drop into it
 d unseed kite-lodz                   # tear a project down
 d cc     "fix this bug"              # = cc "fix this bug"
+d claude mw-backend1                 # exec claude in a running project container (no shell)
 d help                               # list commands
 ```
 
@@ -183,6 +184,25 @@ host dirs that survive restarts (and `--rebuild`):
 Teardown is just Docker (no `unseed` needed): `docker rm -f cc` (state and workspace on the host are
 kept). Use `cc --rebuild` if you only want to refresh the container itself — e.g. after your auth token
 changes, since the token is captured at container-create time.
+
+## `d claude` — exec claude directly (no shell)
+
+Where `d up` drops you into a bash shell inside the container, `d claude` execs `claude` directly — no shell wrapper. This is the shape an external orchestration tool (Herdr) uses to spawn and track Claude Code agents.
+
+```sh
+d claude mw-backend1                           # launch claude at the project's workspaceFolder
+d claude .                                     # current directory's container
+d claude mw-backend1 --cwd /path/inside       # override the working directory inside the container
+d claude mw-backend1 -p "fix the auth bug"    # extra args passed through to claude
+```
+
+**`--cwd <path>`** overrides the working directory Claude starts in. By default it's the project's `workspaceFolder` (same absolute path as the host project dir). Use it when you want Claude to open at a subdirectory — e.g. a monorepo's `api/` subfolder:
+
+```sh
+d claude mw-backend1 --cwd /Users/lkujawia/projects/mw-backend1/api
+```
+
+The container must already be running (`d up <name>` first). `--cwd` is consumed by `claude.sh` and not passed through to `claude` itself; all other args are.
 
 ## How config reaches the container
 

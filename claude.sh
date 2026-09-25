@@ -23,11 +23,12 @@
 # workspaceFolder at all, so it falls back to the devcontainer CLI's own default of
 # /workspaces/<basename>.
 #
-# Usage: claude.sh [<name>|<path>] [claude args…]
+# Usage: claude.sh [<name>|<path>] [--cwd <path>] [claude args…]
 #   claude.sh kite-lodz            exec claude in ~/projects/kite-lodz's container
 #   claude.sh .                    exec claude in the current directory's container
 #   claude.sh                      same as `claude.sh .`
 #   claude.sh kite-lodz -p "hi"    extra args are passed straight through to claude
+#   claude.sh mw-backend1 --cwd /Users/lkujawia/projects/mw-backend1/api  override CWD inside container
 # Resolution matches up.sh: a bare name maps to ~/projects/<name>; anything path-like (., .., an
 # absolute path, or containing a slash) is used as the project dir directly. The container must
 # already be running — this script only execs into it (start it first with `d up <name>`).
@@ -78,4 +79,16 @@ else
   WORKSPACE="$WS_FIELD"
 fi
 
-HERDR_AGENT=claude exec docker exec -it -u "$AGENT_USER" -w "$WORKSPACE" "$NAME" "$CLAUDE_PATH" "$@"
+# Parse --cwd from remaining args before passing through to claude.
+CWD="$WORKSPACE"
+CLAUDE_ARGS=()
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == "--cwd" ]]; then
+    [[ -n "${2:-}" ]] || { echo "error: --cwd requires a path" >&2; exit 1; }
+    CWD="$2"; shift 2
+  else
+    CLAUDE_ARGS+=("$1"); shift
+  fi
+done
+
+HERDR_AGENT=claude exec docker exec -it -u "$AGENT_USER" -w "$CWD" "$NAME" "$CLAUDE_PATH" "${CLAUDE_ARGS[@]+"${CLAUDE_ARGS[@]}"}"
