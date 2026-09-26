@@ -91,4 +91,7 @@ while [[ $# -gt 0 ]]; do
   fi
 done
 
-HERDR_AGENT=claude exec docker exec -it -u "$AGENT_USER" -w "$CWD" "$NAME" "$CLAUDE_PATH" "${CLAUDE_ARGS[@]+"${CLAUDE_ARGS[@]}"}"
+# Source ~/.claude-token (if present) before launching so an updated token is picked up without a
+# container rebuild. bash -c + exec replaces bash with claude, so Herdr still tracks claude directly.
+HERDR_AGENT=claude exec docker exec -it -u "$AGENT_USER" -w "$CWD" "$NAME" \
+  bash -c 'export PATH="$HOME/.local/bin:$PATH"; [ -f ~/.claude-token ] && . ~/.claude-token; exec claude "$@"' -- "${CLAUDE_ARGS[@]+"${CLAUDE_ARGS[@]}"}"
