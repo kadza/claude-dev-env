@@ -133,6 +133,12 @@ if [[ -n "$PROJECT_CONFIG" ]]; then
   rm -rf "$TARGET_DIR/.claude"
   ln -s "$PROJECT_CONFIG/.claude" "$TARGET_DIR/.claude"
   echo "clone: linked .claude/ to project config at $PROJECT_CONFIG (in ${PROJECT_CONFIG_TARGET:-project root})"
+
+  # Optional post-link hook (docs/adr/0037): see seed.sh — lets the project config handle
+  # repo-specific follow-up a cloned repo's own tracked .claude/* convention may need.
+  if [[ -x "$PROJECT_CONFIG/post-link.sh" ]]; then
+    "$PROJECT_CONFIG/post-link.sh" "$PROJECT" "$TARGET_DIR"
+  fi
 fi
 
 # Persisted Claude state (§9). Mount targets must pre-exist; idempotent. Identical to seed.sh.

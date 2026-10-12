@@ -112,6 +112,14 @@ if [[ -n "$PROJECT_CONFIG" ]]; then
   rm -rf "$TARGET_DIR/.claude"
   ln -s "$PROJECT_CONFIG/.claude" "$TARGET_DIR/.claude"
   echo "seed: linked .claude/ to project config at $PROJECT_CONFIG (in ${PROJECT_CONFIG_TARGET:-project root})"
+
+  # Optional post-link hook (docs/adr/0037): project config can supply its own post-link.sh for
+  # repo-specific follow-up (e.g. a cloned repo that already tracks .claude/settings.json upstream
+  # needs `git update-index --skip-worktree` + a .git/info/exclude entry so the symlink doesn't
+  # show up as local changes). claude-dev-env doesn't know that convention — the project config does.
+  if [[ -x "$PROJECT_CONFIG/post-link.sh" ]]; then
+    "$PROJECT_CONFIG/post-link.sh" "$PROJECT" "$TARGET_DIR"
+  fi
 fi
 
 # Persisted Claude state (§9). Mount targets must pre-exist; idempotent.
