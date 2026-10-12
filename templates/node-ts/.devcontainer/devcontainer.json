@@ -19,6 +19,10 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind,consistency=cached",
   "workspaceFolder": "${localWorkspaceFolder}",
 
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
   "mounts": [
     // The config repo — single host clone, live write-back (§7). Source path is configurable:
     // set CLAUDE_DEV_ENV on the host (seed.sh does this automatically; add it to your shell
