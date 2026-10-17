@@ -1,0 +1,98 @@
+{
+  "name": "${localWorkspaceFolderBasename}",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+
+  // --name: name the Docker container after the seed/project name so it's identifiable in OrbStack/docker ps.
+  // --network=host: share the host's network namespace so any port a dev server opens
+  //   is reachable directly at localhost:<port> on the host — no --host flag, no per-port publishing.
+  //   Works on OrbStack (not plain Docker Desktop for Mac). Trade-offs: less isolation, and a port already
+  //   in use on the host collides. Network mode is fixed at create time — recreate the container to apply.
+  "runArgs": ["--name", "${localWorkspaceFolderBasename}", "--network=host"],
+
+  // Mount the repo at the same absolute path the host uses, instead of the devcontainer default
+  // of remapping it to /workspaces/<name>. git worktree (e.g. .claude/worktrees/<name>/ created by
+  // Claude Code) stores absolute paths in its linkage files; if the container and host see the repo
+  // at different paths, a worktree created in the container resolves as broken from the host side.
+  // Using ${localWorkspaceFolder} as both source and target keeps the path identical on both sides.
+  // Fixed at container-create time — rebuild to apply. May not work on Docker Desktop for Mac
+  // without OrbStack, or WSL with path-translation quirks — verify the container still builds.
+  "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind,consistency=cached",
+  "workspaceFolder": "${localWorkspaceFolder}",
+
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "mounts": [
+    // The config repo — single host clone, live write-back (§7). Source path is configurable:
+    // set CLAUDE_DEV_ENV on the host (seed.sh does this automatically; add it to your shell
+    // profile for manual `devcontainer up` rebuilds). Defaults to ~/claude-dev-env via seed.sh.
+    "source=${localEnv:CLAUDE_DEV_ENV},target=/home/vscode/claude-dev-env,type=bind",
+
+    // General skills → the user-scope skills dir, mounted live. Adding or removing a skill under
+    // general/skills/ on the host shows up in every container with no bootstrap re-run (restart
+    // claude to pick it up). Deletions propagate too — no stale symlinks. Fixed at create time.
+    "source=${localEnv:CLAUDE_DEV_ENV}/general/skills,target=/home/vscode/.claude/skills,type=bind",
+
+    // General commands → the user-scope commands dir, mounted live for the same reason as
+    // skills above: edit general/commands/ on the host, every container picks it up with no
+    // bootstrap re-run (restart claude to pick it up). Fixed at create time.
+    "source=${localEnv:CLAUDE_DEV_ENV}/general/commands,target=/home/vscode/.claude/commands,type=bind",
+
+    // Shared screenshot inbox. Take a macOS screenshot to file with ~/claude-shots picked as the
+    // destination (Cmd+Shift+5 → Options → Save to → Other Location…, one-time); it shows up here
+    // and Claude reads the newest, then deletes it (see general/CLAUDE.md). Read-write so cleanup
+    // works. Global, not per-project. Fixed at create time — rebuild to add it to an existing box.
+    "source=${localEnv:HOME}/claude-shots,target=/home/vscode/.claude-shots,type=bind",
+
+    // Project config (docs/adr/0030-0035): an external, unversioned directory this project's
+    // .claude/ + CLAUDE.md symlink into (see seed.sh/clone.sh/up.sh's --project-config flag).
+    // Same absolute path as both source and target (like workspaceMount above) so a symlink
+    // resolves identically from the host and the container, regardless of container user/home.
+    // Always present and always resolves to something: seed/clone/up export PROJECT_CONFIG_DIR
+    // pointing at a fixed empty placeholder dir when --project-config isn't given, since a bind
+    // mount's source must always exist.
+    "source=${localEnv:PROJECT_CONFIG_DIR},target=${localEnv:PROJECT_CONFIG_DIR},type=bind",
+
+    // Claude runtime state per project, survives rebuilds (§9). Session transcripts/memory:
+    "source=${localEnv:HOME}/claude-state/${localWorkspaceFolderBasename}/projects,target=/home/vscode/.claude/projects,type=bind",
+    // ...and ~/.claude.json (onboarding/theme/trust/history) so rebuilds skip onboarding. seed.sh
+    // pre-creates this file as `{}` on the host — a file bind mount needs its source to exist.
+    "source=${localEnv:HOME}/claude-state/${localWorkspaceFolderBasename}/claude.json,target=/home/vscode/.claude.json,type=bind",
+
+    // SSH agent socket (§8). macOS + OrbStack exposes the host agent at this fixed path.
+    // On Linux instead use: source=${localEnv:SSH_AUTH_SOCK},target=/ssh-agent,type=bind
+    "source=/run/host-services/ssh-auth.sock,target=/ssh-agent,type=bind",
+
+    // Git identity. Read-only mount of the host's ~/.gitconfig so commits use your real
+    // name/email with no per-container `git config --global` setup. Requires the host file
+    // to exist and have user.name/user.email set.
+    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
+
+    // Claude token — live bind mount of the host's ~/.claude-token (written by `d token --write`).
+    // bootstrap.sh sources it from .bashrc so new shells pick up CLAUDE_CODE_OAUTH_TOKEN without
+    // a container rebuild. setup.sh touches this file on the host so the source always exists.
+    "source=${localEnv:HOME}/.claude-token,target=/home/vscode/.claude-token,type=bind"
+
+    // Claude credentials (§8). On macOS creds live in the Keychain, not a file, so we pass
+    // an OAuth token via containerEnv below instead of mounting ~/.claude/.credentials.json.
+    // If you DO have a credentials file on the host (e.g. Linux), add this mount instead of
+    // setting CLAUDE_CODE_OAUTH_TOKEN:
+    // "source=${localEnv:HOME}/.claude/.credentials.json,target=/home/vscode/.claude/.credentials.json,type=bind"
+  ],
+
+  "containerEnv": {
+    "SSH_AUTH_SOCK": "/ssh-agent",
+    // Run `claude setup-token` once on the host and export the result, e.g.:
+    //   export CLAUDE_CODE_OAUTH_TOKEN="$(claude setup-token)"
+    // so seeded containers start authenticated with no login prompt.
+    "CLAUDE_CODE_OAUTH_TOKEN": "${localEnv:CLAUDE_CODE_OAUTH_TOKEN}"
+  },
+
+  // The state mounts make Docker auto-create ~/.claude (and the ~/.claude.json target) as root;
+  // reclaim them so bootstrap and Claude can write. See .devcontainer/setup.sh for the steps
+  // (chown state mounts, install Claude, wire ~/.claude via bootstrap.sh — general layer only,
+  // no framework, since this template has no language runtime). The project name is passed
+  // through since ${localWorkspaceFolderBasename} isn't visible in-script.
+  "postCreateCommand": "bash .devcontainer/setup.sh ${localWorkspaceFolderBasename}"
+}
