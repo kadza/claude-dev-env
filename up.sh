@@ -153,6 +153,24 @@ if [[ "$REBUILD" -eq 1 ]]; then
   up_args+=(--remove-existing-container)
 fi
 
+# --- container-name collision guard ---
+# devcontainer.json names the container after the project folder (runArgs: --name
+# ${localWorkspaceFolderBasename}, i.e. $NAME here). If a container by that name already exists
+# but isn't this project's own (mismatched/missing devcontainer.local_folder label — a stale
+# leftover from an interrupted run, or an unrelated container), `devcontainer up` fails deep
+# inside a `docker run --name` conflict with an opaque Docker error. Catch it here instead.
+# Skipped under --rebuild: --remove-existing-container already tells devcontainer to tear down
+# whatever currently holds that name before recreating.
+if [[ "$REBUILD" -ne 1 ]] && command -v docker >/dev/null 2>&1 && docker inspect "$NAME" >/dev/null 2>&1; then
+  EXISTING_FOLDER="$(docker inspect -f '{{index .Config.Labels "devcontainer.local_folder"}}' "$NAME" 2>/dev/null || true)"
+  if [[ "$EXISTING_FOLDER" != "$PROJECT" ]]; then
+    echo "error: a container named '$NAME' already exists but isn't this project's devcontainer" >&2
+    echo "       (devcontainer.local_folder: '${EXISTING_FOLDER:-<none>}', expected '$PROJECT')." >&2
+    echo "       remove it first if it's stale: docker rm -f $NAME" >&2
+    exit 1
+  fi
+fi
+
 # --- up + in ---
 devcontainer up "${up_args[@]}"
 exec devcontainer exec --workspace-folder "$PROJECT" bash
