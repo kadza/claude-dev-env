@@ -1,0 +1,5 @@
+# vitest pulls in esbuild, whose postinstall script pnpm blocks by default (ERR_PNPM_IGNORED_BUILDS).
+# That's a hard install failure in the non-interactive postCreateCommand (no TTY for `pnpm approve-builds`),
+# so pre-approve it here.
+allowBuilds:
+  esbuild: true
