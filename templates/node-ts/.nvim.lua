@@ -140,6 +140,43 @@ conform.formatters_by_ft.typescriptreact = { "oxfmt" }
 conform.formatters_by_ft.javascript = { "oxfmt" }
 conform.formatters_by_ft.javascriptreact = { "oxfmt" }
 
+-- oxfmt only covers JS/TS (it's the Oxc *JavaScript* formatter), so .module.css and other CSS
+-- goes through stylelint --fix instead, the repo's actual CSS tool (see .stylelintrc.json). Same
+-- node_modules-walk-up rationale as find_oxfmt above: monorepo subpackages each install their own.
+local function find_stylelint(start_dir)
+	local node_modules = vim.fs.find("node_modules", { upward = true, path = start_dir })[1]
+	if node_modules then
+		local candidate = node_modules .. "/.bin/stylelint"
+		if vim.uv.fs_stat(candidate) then
+			return candidate
+		end
+	end
+	return local_bin("stylelint")
+end
+
+conform.formatters.stylelint = {
+	command = "docker",
+	args = function(self, ctx)
+		return {
+			"exec",
+			"-i",
+			"-u",
+			"node",
+			"-e",
+			"HOME=/home/node",
+			container,
+			find_stylelint(vim.fs.dirname(ctx.filename)),
+			"--fix",
+			"--stdin",
+			"--stdin-filename",
+			"$FILENAME",
+		}
+	end,
+	stdin = true,
+}
+
+conform.formatters_by_ft.css = { "stylelint" }
+
 -- This repo has no eslint at all (fully migrated to oxlint — see .oxlintrc.json), so a global
 -- eslint_d nvim-lint linter has nothing valid to run here. The oxlint LSP client above already
 -- gives live diagnostics, so just turn eslint_d off for this project rather than duplicate it.
