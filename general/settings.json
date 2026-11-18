@@ -17,6 +17,7 @@
     ],
     "blockReadsOutsideWorkingDirectories": false
   },
+  "model": "sonnet",
   "tui": "default",
   "theme": "dark"
 }

@@ -45,7 +45,7 @@ Use the `general-purpose` subagent. Include in the prompt:
 
 - The full diff command and commit list.
 - The list of standards-source files you found in step 2, **plus the smell baseline from step 2** pasted in full — the sub-agent has no other access to it.
-- The brief: "Report — per file/hunk where relevant — (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls — documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Under 400 words."
+- The brief: "Report — per file/hunk where relevant — (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls — documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. For every violation found (standard or smell), grep the rest of the diff/file for the same pattern and report every real occurrence, not just the first — reviewers and summaries both tend to under-report repeats. Under 400 words."
 
 ### 4. Report
 
