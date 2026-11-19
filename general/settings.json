@@ -19,5 +19,8 @@
   },
   "model": "sonnet",
   "tui": "default",
-  "theme": "dark"
+  "theme": "dark",
+  "env": {
+    "CLAUDE_CODE_PLUGIN_DIRS": "~/claude-dev-env/general/mods/m"
+  }
 }
