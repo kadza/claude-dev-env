@@ -64,7 +64,7 @@ vim.lsp.config("tsc", {
 			"-w",
 			lsp_root,
 			container,
-			lsp_root .. "/node_modules/.bin/tsgo",
+			lsp_root .. "/node_modules/.bin/tsc",
 			"--lsp",
 			"--stdio",
 		}, dispatchers)
@@ -94,7 +94,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 -- .oxlintrc.json and its own oxlint install right now (unlike oxfmt, which every subpackage
 -- runs), so point straight at api/'s node_modules/.bin instead of the nonexistent root one.
 vim.lsp.config("oxlint", {
-	cmd = docker_exec(root .. "/node_modules/.bin/oxlint", "--lsp"),
+	cmd = docker_exec(root .. "/api/node_modules/.bin/oxlint", "--lsp"),
 	filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
 	root_markers = { ".oxlintrc.json", ".git" },
 	before_init = clear_process_id,
